@@ -1,0 +1,2506 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Desk Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--s1:#ffffff;--s2:#f5f7fa;--s3:#eef1f6;--s4:#e2e6ed;
+  --b1:#d4dae4;--b2:#c2cad8;
+  --t1:#1a2133;--t2:#4a5568;--t3:#718096;--t4:#a0aec0;
+  --g:#0a8f5c;--r:#d93025;--a:#b07a00;--bl:#1a6fcc;--cy:#0077aa;--pu:#7c3aed;
+  --font:'JetBrains Mono',monospace;--head:'Syne',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--t1);font-size:12px;display:flex;flex-direction:column}
+
+/* TOP BAR */
+#topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:48px;background:var(--s1);border-bottom:1px solid var(--b1);z-index:50}
+.logo{font-family:var(--head);font-size:16px;font-weight:800;
+  background:linear-gradient(135deg,var(--cy),var(--g));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-mid{display:flex;gap:12px;align-items:center}
+.mkt{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:3px;font-size:10px;font-weight:600}
+.mkt.open{background:rgba(10,143,92,.1);border:1px solid rgba(10,143,92,.3);color:var(--g)}
+.mkt.closed{background:rgba(160,174,192,.1);border:1px solid rgba(160,174,192,.3);color:var(--t3)}
+.dot{width:6px;height:6px;border-radius:50%}
+.dot.pulse{animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+#clock{font-size:11px;color:var(--t3)}
+#ws-status{font-size:9px;padding:3px 8px;border-radius:2px;border:1px solid var(--b1);color:var(--t3)}
+#ws-status.live{color:var(--g);border-color:rgba(10,143,92,.3);background:rgba(10,143,92,.08)}
+#ws-status.poll{color:var(--a);border-color:rgba(176,122,0,.3);background:rgba(176,122,0,.08)}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.pill-r{font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid rgba(217,48,37,.3);color:var(--r)}
+.btn-add{font-size:10px;padding:5px 13px;border-radius:3px;cursor:pointer;font-family:var(--font);font-weight:600;
+  background:rgba(0,119,170,.08);border:1px solid rgba(0,119,170,.25);color:var(--cy);transition:.12s}
+.btn-add:hover{background:rgba(0,119,170,.16)}
+.btn-add.opt{background:rgba(124,58,237,.08);border-color:rgba(124,58,237,.25);color:var(--pu)}
+.btn-add.opt:hover{background:rgba(124,58,237,.16)}
+
+/* BOOK BAR */
+#bookbar{flex:0 0 auto;display:grid;grid-template-columns:repeat(7,1fr);
+  background:var(--s1);border-bottom:1px solid var(--b1)}
+.bc{padding:9px 14px;border-right:1px solid var(--b1)}
+.bc:last-child{border-right:none}
+.bc-l{font-size:9px;color:var(--t4);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px}
+.bc-v{font-size:14px;font-weight:700}
+.bc-s{font-size:9px;color:var(--t3);margin-top:2px}
+.up{color:var(--g)}.dn{color:var(--r)}.flat{color:var(--t2)}
+
+/* STOP BAR */
+#stopbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:5px 20px;background:var(--s2);border-bottom:1px solid var(--b1)}
+.stop-lbl{font-size:9px;color:var(--t3);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+#stoptrack{flex:1;height:4px;background:var(--s4);border-radius:2px;overflow:hidden}
+#stopfill{height:100%;width:0%;background:linear-gradient(90deg,var(--g),var(--a) 55%,var(--r));border-radius:2px;transition:width 1.5s}
+#stopamt{font-size:12px;font-weight:700;color:var(--r);white-space:nowrap}
+.stop-limit{font-size:10px;color:var(--t4);white-space:nowrap}
+
+/* TABS */
+#tabbar{flex:0 0 auto;display:flex;background:var(--s1);border-bottom:1px solid var(--b1);padding:0 20px}
+.tab{font-size:11px;padding:10px 15px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;
+  background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font);transition:.12s}
+.tab:hover{color:var(--t2)}
+.tab.on{color:var(--cy);border-bottom-color:var(--cy)}
+
+/* MAIN */
+#main{flex:1;overflow:hidden}
+.page{display:none;height:100%;overflow-y:auto;padding:16px 20px}
+.page.on{display:block}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sh-title{font-size:10px;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase}
+.sh-r{display:flex;gap:8px;align-items:center}
+#lastUpd{font-size:9px;color:var(--t4)}
+.rbtn{font-size:10px;padding:4px 10px;background:var(--s2);border:1px solid var(--b2);
+  color:var(--t3);cursor:pointer;border-radius:3px;font-family:var(--font);transition:.12s}
+.rbtn:hover{color:var(--cy);border-color:var(--cy);background:rgba(0,119,170,.05)}
+
+/* WATCHLIST GRID */
+#wlGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+
+/* CARD */
+.wl-card{background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:14px;
+  position:relative;overflow:hidden;transition:border-color .2s,opacity .4s;
+  box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.wl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:transparent;transition:background .3s}
+.wl-card.up-c::before{background:linear-gradient(90deg,var(--g),transparent)}
+.wl-card.dn-c::before{background:linear-gradient(90deg,var(--r),transparent)}
+/* CLOSED market dim */
+.wl-card.mkt-closed-card{opacity:.5;filter:saturate(.3) brightness(1.02)}
+.wl-card.mkt-closed-card .card-price{color:var(--t3)!important}
+
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.card-sym-block{display:flex;flex-direction:column;gap:3px}
+.card-sym-row{display:flex;align-items:center;gap:6px}
+.sym{font-weight:700;font-size:13px}
+.badge{display:inline-block;font-size:8px;padding:2px 5px;border-radius:2px;font-weight:700}
+.b-us{background:rgba(26,111,204,.1);color:var(--bl);border:1px solid rgba(26,111,204,.25)}
+.b-tw{background:rgba(176,122,0,.1);color:var(--a);border:1px solid rgba(176,122,0,.25)}
+.nm{font-size:10px;color:var(--t3)}
+.card-price-block{text-align:right}
+.card-price{font-size:22px;font-weight:700;transition:color .15s}
+.card-chg{font-size:11px;font-weight:500;margin-top:2px}
+
+/* flash */
+@keyframes fg{0%,100%{background:transparent}40%{background:rgba(10,143,92,.1)}}
+@keyframes fr{0%,100%{background:transparent}40%{background:rgba(217,48,37,.08)}}
+.fgl{animation:fg .4s}.frl{animation:fr .4s}
+
+.card-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;
+  margin-top:10px;padding-top:10px;border-top:1px solid var(--b1)}
+.cs .cs-l{font-size:8px;color:var(--t4);letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px}
+.cs .cs-v{font-size:11px;color:var(--t2)}
+
+/* 52w bar */
+.range-row{margin-top:10px;padding-top:8px;border-top:1px solid var(--b1)}
+.range-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--t4);margin-bottom:4px}
+.range-track{height:4px;background:var(--s4);border-radius:2px;overflow:hidden}
+.range-fill{height:100%;background:linear-gradient(90deg,var(--a),var(--g));border-radius:2px;transition:width 1s}
+
+.card-bottom{display:flex;justify-content:space-between;align-items:flex-end;
+  margin-top:10px;padding-top:8px;border-top:1px solid var(--b1)}
+.eps-block{font-size:10px;color:var(--t3)}
+.closed-overlay{position:absolute;top:8px;right:8px;
+  font-size:9px;padding:2px 6px;border-radius:2px;
+  background:rgba(82,95,120,.2);border:1px solid rgba(82,95,120,.3);color:var(--t3);letter-spacing:.5px}
+
+/* TABLES */
+.tbl-wrap{border:1px solid var(--b1);border-radius:4px;overflow:hidden;margin-bottom:16px}
+table{width:100%;border-collapse:collapse}
+th{font-size:9px;color:var(--t4);letter-spacing:1px;text-transform:uppercase;
+  padding:8px 12px;text-align:right;background:var(--s2);border-bottom:1px solid var(--b1);font-weight:400}
+th.l,td.l{text-align:left}
+td{padding:9px 12px;border-bottom:1px solid rgba(37,45,61,.4);text-align:right;font-size:12px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(0,0,0,.025)}
+.sym-td{font-weight:700;font-size:13px}
+.nm-td{font-size:10px;color:var(--t3)}
+.tb{display:inline-block;font-size:9px;padding:2px 6px;border-radius:2px;font-weight:700}
+.tb-long{background:rgba(10,143,92,.1);color:var(--g);border:1px solid rgba(10,143,92,.25)}
+.tb-short{background:rgba(217,48,37,.1);color:var(--r);border:1px solid rgba(217,48,37,.25)}
+.tb-call{background:rgba(26,111,204,.1);color:var(--bl);border:1px solid rgba(26,111,204,.25)}
+.tb-put{background:rgba(124,58,237,.1);color:var(--pu);border:1px solid rgba(124,58,237,.25)}
+.tb-buy{background:rgba(10,143,92,.08);color:var(--g);border:1px solid rgba(10,143,92,.2)}
+.tb-sell{background:rgba(217,48,37,.08);color:var(--r);border:1px solid rgba(217,48,37,.2)}
+.del{font-size:9px;padding:3px 7px;background:rgba(217,48,37,.06);border:1px solid rgba(217,48,37,.2);
+  color:var(--r);cursor:pointer;border-radius:2px;font-family:var(--font)}
+.del:hover{background:rgba(217,48,37,.14)}
+.btn-sm{font-size:9px;padding:3px 7px;background:var(--s3);border:1px solid var(--b2);
+  color:var(--t2);cursor:pointer;border-radius:2px;font-family:var(--font);margin-right:3px}
+.btn-sm:hover{color:var(--cy);border-color:var(--cy)}
+.empty-td{text-align:center!important;color:var(--t4);padding:24px!important;font-size:11px}
+
+/* RISK */
+.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.card-box{background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:16px}
+.card-box-title{font-size:9px;color:var(--t4);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px}
+canvas{display:block;width:100%!important}
+
+.greek-row{display:flex;gap:20px;flex-wrap:wrap;padding:6px 0}
+.gi .gi-l{font-size:8px;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.gi .gi-v{font-size:13px;font-weight:600}
+
+.alert{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:3px;margin-bottom:6px;font-size:11px}
+.alert-w{background:rgba(176,122,0,.07);border:1px solid rgba(176,122,0,.25);color:var(--a)}
+.alert-d{background:rgba(217,48,37,.07);border:1px solid rgba(217,48,37,.25);color:var(--r)}
+.alert-i{background:rgba(26,111,204,.07);border:1px solid rgba(26,111,204,.25);color:var(--bl)}
+
+/* HISTORY */
+.hist-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.hs{background:var(--s1);border:1px solid var(--b1);border-radius:4px;padding:12px}
+.hs .hs-l{font-size:9px;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.hs .hs-v{font-size:16px;font-weight:700}
+.hs .hs-s{font-size:9px;color:var(--t3);margin-top:2px}
+.wb{display:inline-block;font-size:9px;padding:2px 6px;border-radius:2px}
+.wb.win{background:rgba(10,143,92,.1);color:var(--g);border:1px solid rgba(10,143,92,.25)}
+.wb.loss{background:rgba(217,48,37,.1);color:var(--r);border:1px solid rgba(217,48,37,.25)}
+.wb.flat{background:rgba(113,128,150,.1);color:var(--t2);border:1px solid rgba(113,128,150,.25)}
+
+/* MODAL */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+#overlay.on{display:flex}
+#modal{background:var(--s1);border:1px solid var(--b2);border-radius:6px;padding:24px;width:480px;max-width:93vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.mt{font-family:var(--head);font-size:14px;font-weight:700;color:var(--cy);margin-bottom:16px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.full{grid-column:1/-1}
+label{font-size:9px;color:var(--t3);letter-spacing:1px;text-transform:uppercase}
+input,select{background:var(--s2);border:1px solid var(--b2);color:var(--t1);
+  padding:8px 10px;border-radius:3px;font-family:var(--font);font-size:12px;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--cy)}
+select option{background:var(--s1)}
+.mact{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.btn-p{padding:8px 18px;border-radius:3px;cursor:pointer;font-family:var(--font);font-size:11px;font-weight:700;background:var(--cy);color:#fff;border:none}
+.btn-g{padding:8px 14px;border-radius:3px;cursor:pointer;font-family:var(--font);font-size:11px;background:transparent;border:1px solid var(--b2);color:var(--t2)}
+.opt-hint{font-size:10px;color:var(--t3);padding:8px;background:var(--s3);border-radius:3px;margin-top:8px;line-height:1.6}
+.sep{height:1px;background:var(--b1);margin:12px 0}
+.live-price-hint{font-size:10px;color:var(--g);margin-top:4px}
+
+/* ═══ STRATEGY PAGE ═══ */
+.strat-wrap{display:grid;grid-template-columns:300px 1fr;gap:14px;min-height:0}
+.strat-left,.strat-right{display:flex;flex-direction:column;gap:12px;min-width:0}
+.sp{background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:14px}
+.sp-ttl{font-size:9px;color:var(--t4);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px}
+.sl{display:flex;flex-direction:column;gap:3px}
+.sl label{font-size:9px;color:var(--t3);letter-spacing:1px;text-transform:uppercase}
+.sl select,.sl input[type=number],.sl input[type=range]{
+  background:var(--s2);border:1px solid var(--b2);color:var(--t1);
+  padding:6px 9px;border-radius:3px;font-family:var(--font);font-size:11px;outline:none;width:100%}
+.sl select:focus,.sl input:focus{border-color:var(--cy)}
+.sg2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.sg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+
+.quote-pill{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 10px;background:var(--s3);border:1px solid var(--b1);border-radius:4px;margin-bottom:8px}
+.qp-sym{font-size:14px;font-weight:700}
+.qp-price{font-size:16px;font-weight:700}
+.qp-sub{font-size:9px;color:var(--t4);margin-top:2px}
+
+/* strategy selector buttons */
+.strat-btns{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:2px}
+.sb{font-size:9px;padding:7px 6px;border-radius:3px;cursor:pointer;font-family:var(--font);font-weight:600;
+  background:var(--s3);border:1px solid var(--b2);color:var(--t3);text-align:center;line-height:1.4;transition:.1s}
+.sb:hover{color:var(--t1);border-color:var(--b1)}
+.sb.on{background:rgba(0,119,170,.08);border-color:var(--cy);color:var(--cy)}
+
+/* metrics row */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.mc{background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:10px 12px}
+.mc-l{font-size:8px;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.mc-v{font-size:15px;font-weight:700}
+
+/* legs list */
+.leg{display:flex;align-items:center;justify-content:space-between;
+  padding:5px 9px;border-radius:3px;border:1px solid var(--b1);background:var(--s2);margin-bottom:4px;font-size:10px}
+.leg-tag{display:inline-block;font-size:8px;padding:1px 5px;border-radius:2px;font-weight:700;border:1px solid}
+.leg-del{font-size:9px;padding:2px 6px;background:transparent;border:1px solid rgba(217,48,37,.3);
+  color:var(--r);cursor:pointer;border-radius:2px;font-family:var(--font)}
+
+/* option chain table */
+.chain-scroll{overflow:auto;max-height:340px}
+.oc{width:100%;border-collapse:collapse;font-size:10px}
+.oc th{font-size:8px;color:var(--t4);letter-spacing:.8px;text-transform:uppercase;
+  padding:5px 8px;text-align:right;background:var(--s2);border-bottom:1px solid var(--b1);
+  white-space:nowrap;position:sticky;top:0;z-index:1}
+.oc th.l,.oc td.l{text-align:center}
+.oc td{padding:4px 8px;border-bottom:1px solid rgba(0,0,0,.04);text-align:right;cursor:pointer}
+.oc tr:hover td{background:rgba(0,119,170,.04)}
+.oc tr.atm td{background:rgba(0,119,170,.06);font-weight:600}
+.oc tr.sel-c td{background:rgba(10,143,92,.07)}
+.oc tr.sel-p td{background:rgba(124,58,237,.07)}
+.oc .iv-bar{display:inline-block;height:6px;border-radius:2px;background:var(--cy);opacity:.6;vertical-align:middle;margin-left:4px}
+
+/* exp tab buttons */
+.exp-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.et{font-size:9px;padding:3px 9px;border-radius:2px;cursor:pointer;font-family:var(--font);
+  border:1px solid var(--b2);background:var(--s3);color:var(--t3);transition:.1s;white-space:nowrap}
+.et:hover{color:var(--t2)}
+.et.on{background:rgba(0,119,170,.08);border-color:var(--cy);color:var(--cy)}
+
+/* canvases */
+#pnlCanvas,#hvCanvas,#skewCanvas{display:block;width:100%!important;border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="logo">◈ TRADING DESK</div>
+  <div class="topbar-mid">
+    <div id="nyse" class="mkt closed"><div class="dot" style="background:var(--t3)"></div>NYSE</div>
+    <div id="twse" class="mkt closed"><div class="dot" style="background:var(--t3)"></div>TWSE</div>
+    <div id="clock"></div>
+    <div id="fx-rate-display" style="font-size:10px;padding:3px 8px;border-radius:3px;border:1px solid var(--b1);color:var(--t3);background:var(--s2)">USD/TWD 載入中…</div>
+    <div id="ws-status">● 連線中…</div>
+  </div>
+  <div class="topbar-right">
+    <div class="pill-r" id="pill-r-stop">停損 NT$載入中</div>
+    <button class="btn-add" onclick="openModal('stock')">＋ 股票部位</button>
+    <button class="btn-add opt" onclick="openModal('option')">＋ 選擇權</button>
+  </div>
+</div>
+
+<!-- BOOK BAR -->
+<div id="bookbar">
+  <div class="bc"><div class="bc-l">Today P&L <span style="font-size:8px;color:var(--t4)">NT$</span></div><div class="bc-v" id="bk0">NT$0.00</div><div class="bc-s">vs 昨收</div></div>
+  <div class="bc"><div class="bc-l">Unrealized <span style="font-size:8px;color:var(--t4)">NT$</span></div><div class="bc-v" id="bk1">NT$0.00</div><div class="bc-s">浮動損益</div></div>
+  <div class="bc"><div class="bc-l">Realized <span style="font-size:8px;color:var(--t4)">NT$</span></div><div class="bc-v" id="bk2">NT$0.00</div><div class="bc-s">已實現</div></div>
+  <div class="bc"><div class="bc-l">Market Value <span style="font-size:8px;color:var(--t4)">NT$</span></div><div class="bc-v" id="bk3">NT$0</div><div class="bc-s">總持倉市值</div></div>
+  <div class="bc"><div class="bc-l">Net Delta $ <span style="font-size:8px;color:var(--t4)">NT$</span></div><div class="bc-v" id="bk4">NT$0</div><div class="bc-s">方向性曝險</div></div>
+  <div class="bc"><div class="bc-l">Drawdown <span style="font-size:8px;color:var(--t4)">NT$</span></div><div class="bc-v" id="bk5">NT$0</div><div class="bc-s" id="bk5s">0.0% used</div></div>
+  <div class="bc"><div class="bc-l">Positions</div><div class="bc-v" id="bk6">0</div><div class="bc-s" id="bk6s">選擇權: 0</div></div>
+</div>
+
+<!-- STOP BAR -->
+<div id="stopbar">
+  <div class="stop-lbl">停損計量 <span style="font-size:8px;opacity:.7">(NT$)</span></div>
+  <div id="stoptrack"><div id="stopfill"></div></div>
+  <div id="stopamt">NT$0</div>
+  <div class="stop-limit" id="stop-limit-label">/ NT$—</div>
+</div>
+
+<!-- TABS -->
+<div id="tabbar">
+  <button class="tab on" onclick="go('watch',this)">行情看板</button>
+  <button class="tab" onclick="go('pos',this)">股票部位</button>
+  <button class="tab" onclick="go('opt',this)">選擇權</button>
+  <button class="tab" onclick="go('risk',this)">風險監控</button>
+  <button class="tab" onclick="go('hist',this)">歷史交易</button>
+  <button class="tab" onclick="go('strat',this)">策略分析</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- WATCH -->
+  <div id="page-watch" class="page on">
+    <div class="sh">
+      <div class="sh-title">即時行情</div>
+      <div class="sh-r"><span id="lastUpd" style="font-size:9px;color:var(--t4)">載入中…</span></div>
+    </div>
+    <div id="wlGrid"></div>
+  </div>
+
+  <!-- POSITIONS -->
+  <div id="page-pos" class="page">
+    <div class="sh"><div class="sh-title">股票部位</div><button class="btn-add" onclick="openModal('stock')">＋ 新增</button></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th class="l">代號</th><th class="l">方向</th><th>數量</th><th>均價</th><th>現價</th>
+        <th>市值</th><th>未實現 P&L</th><th>P&L%</th><th>Today P&L</th><th>Delta $</th><th></th>
+      </tr></thead>
+      <tbody id="posBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- OPTIONS -->
+  <div id="page-opt" class="page">
+    <div class="sh"><div class="sh-title">選擇權部位</div><button class="btn-add opt" onclick="openModal('option')">＋ 新增</button></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th class="l">標的</th><th>類型</th><th>方向</th><th>履約價</th><th>到期日</th><th>口數</th>
+        <th>均價</th><th>現價(BS)</th><th>未實現 P&L</th>
+        <th>Δ</th><th>Γ</th><th>Θ</th><th>ν</th><th></th>
+      </tr></thead>
+      <tbody id="optBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- RISK -->
+  <div id="page-risk" class="page">
+    <div id="alertBox"></div>
+    <div class="risk-grid">
+      <div class="card-box"><div class="card-box-title">P&L by Symbol</div><canvas id="cBar" height="200"></canvas></div>
+      <div class="card-box"><div class="card-box-title">累計 P&L 曲線</div><canvas id="cLine" height="200"></canvas></div>
+    </div>
+    <div class="card-box"><div class="card-box-title">Options Greeks</div><div id="greekBox"></div></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="page-hist" class="page">
+    <div class="hist-stats">
+      <div class="hs"><div class="hs-l">總筆數</div><div class="hs-v" id="hs0">0</div><div class="hs-s">所有交易</div></div>
+      <div class="hs"><div class="hs-l">勝率</div><div class="hs-v up" id="hs1">0%</div><div class="hs-s" id="hs1s">盈 0 / 虧 0</div></div>
+      <div class="hs"><div class="hs-l">已實現 P&L</div><div class="hs-v" id="hs2">$0</div><div class="hs-s">全部平倉</div></div>
+      <div class="hs"><div class="hs-l">平均盈利</div><div class="hs-v up" id="hs3">$0</div><div class="hs-s">盈利均值</div></div>
+      <div class="hs"><div class="hs-l">平均虧損</div><div class="hs-v dn" id="hs4">$0</div><div class="hs-s">虧損均值</div></div>
+    </div>
+    <div class="sh">
+      <div class="sh-title">成交記錄</div>
+      <button class="rbtn" onclick="if(confirm('清除全部？')){trades=[];renderHistory();_fsWrite('trades',[])}">清除記錄</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th class="l">時間</th><th class="l">代號</th><th>類型</th><th>動作</th>
+        <th>數量</th><th>價格</th><th>平倉價</th><th>已實現 P&L</th><th>結果</th>
+      </tr></thead>
+      <tbody id="histBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- STRATEGY -->
+  <div id="page-strat" class="page">
+    <div class="strat-wrap">
+      <!-- LEFT PANEL -->
+      <div class="strat-left">
+        <!-- 標的 & 基本資訊 -->
+        <div class="sp">
+          <div class="sp-ttl">標的 & 市況</div>
+          <div class="sg2" style="margin-bottom:10px">
+            <div class="sl"><label>選擇標的</label>
+              <select id="st-sym" onchange="onStSym()">
+                <option>NVDA</option><option>AMD</option><option>TSLA</option>
+                <option>ADBE</option><option>AVGO</option><option>CAT</option><option>DIS</option>
+              </select>
+            </div>
+            <div class="sl"><label>自訂 IV %</label>
+              <input type="number" id="st-iv" min="5" max="300" step="1" value="30" oninput="onStIV()">
+            </div>
+          </div>
+          <div id="st-quote"></div>
+        </div>
+
+        <!-- 策略模板 -->
+        <div class="sp">
+          <div class="sp-ttl">策略模板</div>
+          <div class="strat-btns" id="st-btns">
+            <div class="sb on" data-s="custom"   onclick="pickStrat(this)">自由組合</div>
+            <div class="sb"    data-s="cc"        onclick="pickStrat(this)">Covered Call</div>
+            <div class="sb"    data-s="pp"        onclick="pickStrat(this)">Protective Put</div>
+            <div class="sb"    data-s="bcs"       onclick="pickStrat(this)">Bull Call Spread</div>
+            <div class="sb"    data-s="bps"       onclick="pickStrat(this)">Bear Put Spread</div>
+            <div class="sb"    data-s="straddle"  onclick="pickStrat(this)">Straddle</div>
+            <div class="sb"    data-s="strangle"  onclick="pickStrat(this)">Strangle</div>
+            <div class="sb"    data-s="ic"        onclick="pickStrat(this)">Iron Condor</div>
+          </div>
+        </div>
+
+        <!-- 組合腿 -->
+        <div class="sp">
+          <div class="sp-ttl" style="display:flex;justify-content:space-between">
+            <span>組合腿位</span>
+            <button class="rbtn" style="font-size:9px;padding:2px 8px" onclick="clearLegs()">清除</button>
+          </div>
+          <div id="st-legs"><div style="color:var(--t4);font-size:10px;padding:4px 0">點選下方選擇權鏈加入腿位</div></div>
+          <button class="btn-add opt" style="width:100%;margin-top:8px;font-size:10px" onclick="addToPortfolio()">加入我的選擇權部位 →</button>
+        </div>
+
+        <!-- 損益關鍵指標 -->
+        <div class="sp">
+          <div class="sp-ttl">策略指標</div>
+          <div id="st-metrics">
+            <div style="color:var(--t4);font-size:10px">請先選擇腿位</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="strat-right">
+        <!-- 損益圖 -->
+        <div class="sp">
+          <div class="sp-ttl" style="display:flex;justify-content:space-between;align-items:center">
+            <span>到期損益圖</span>
+            <div id="st-pnl-legend" style="font-size:9px;color:var(--t3)"></div>
+          </div>
+          <canvas id="pnlCanvas" height="200"></canvas>
+        </div>
+
+        <!-- 選擇權鏈 -->
+        <div class="sp">
+          <div class="sp-ttl" style="display:flex;justify-content:space-between;align-items:center">
+            <span>選擇權鏈</span>
+            <span id="st-chain-info" style="font-size:9px;color:var(--t3)"></span>
+          </div>
+          <div class="exp-tabs" id="st-exp-tabs"></div>
+          <div class="chain-scroll">
+            <table class="oc">
+              <thead><tr>
+                <th style="text-align:center;width:28px">+C</th>
+                <th>Call Bid</th><th>Call Ask</th><th>Call IV</th><th>Call Vol</th>
+                <th class="l" style="min-width:72px">履約價</th>
+                <th>Put Bid</th><th>Put Ask</th><th>Put IV</th><th>Put Vol</th>
+                <th style="text-align:center;width:28px">+P</th>
+              </tr></thead>
+              <tbody id="st-chain-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- HV & IV Skew -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="sp">
+            <div class="sp-ttl">歷史波動率 HV21</div>
+            <canvas id="hvCanvas" height="140"></canvas>
+          </div>
+          <div class="sp">
+            <div class="sp-ttl">IV Skew（現選到期日）</div>
+            <canvas id="skewCanvas" height="140"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="overlay" onclick="if(event.target===this)closeModal()">
+<div id="modal">
+  <div class="mt" id="mTitle"></div>
+  <div id="mBody"></div>
+  <div class="mact">
+    <button class="btn-g" onclick="closeModal()">取消</button>
+    <button class="btn-p" onclick="saveModal()">確認</button>
+  </div>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const FKEY    = 'd10od91r01qlsacac3agd10od91r01qlsacac3b0'; // Finnhub
+const US_SYMS = ['ADBE','AVGO','CAT','DIS','NVDA','AMD','TSLA'];
+const TW_SYMS = ['2317.TW','2454.TW','2330.TW'];
+const ALL_SYMS = [...US_SYMS, ...TW_SYMS];
+const SYM_NAME = {
+  ADBE:'Adobe Inc.',AVGO:'Broadcom Inc.',CAT:'Caterpillar',DIS:'Walt Disney',
+  NVDA:'NVIDIA Corp.',AMD:'AMD Inc.',TSLA:'Tesla Inc.',
+  '2317.TW':'鴻海精密','2454.TW':'聯發科技','2330.TW':'台灣積體電路'
+};
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let Q = {}, PH = {};
+let positions = ld('pos',[]), options_p = ld('opt',[]);
+let trades = ld('hist',[]);
+// Migrate pnlCurve: if old data has >10 points within 60s (high-freq), clear it
+let pnlCurve = [];
+let mMode = 'stock', wsActive = false, ws = null;
+let pollTimer = null, marketState = {nyse:false, twse:false};
+
+// ═══════════════════════════════════════════
+// FX RATE  — 統一以 TWD 計價
+// USD/TWD 即時匯率：每 5 分鐘更新一次
+// ═══════════════════════════════════════════
+let FX = { USDTWD: 32.0, updatedAt: null }; // 預設值 32，等真實抓到後替換
+
+async function fetchFXRate(){
+  // 用跟台股同一套 Yahoo Finance proxy 抓 USDTWD=X（即時外匯）
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/USDTWD%3DX?interval=1m&range=1d`;
+  const proxies = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}&t=${Date.now()}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  ];
+
+  for(const p of proxies){
+    try{
+      const r = await fetch(p, {cache:'no-store', signal:AbortSignal.timeout(8000)});
+      if(!r.ok) continue;
+      const d = await r.json();
+      const meta = d?.chart?.result?.[0]?.meta;
+      if(!meta) continue;
+      const rate = meta.regularMarketPrice || meta.previousClose;
+      if(rate && rate > 20 && rate < 60){
+        FX.USDTWD = rate;
+        FX.updatedAt = Date.now();
+        updateFXDisplay(false);
+        return;
+      }
+    }catch{}
+  }
+
+  // fallback: ExchangeRate-API
+  try{
+    const r = await fetch(`https://open.er-api.com/v6/latest/USD`,
+      {cache:'no-store', signal:AbortSignal.timeout(6000)});
+    if(r.ok){
+      const d = await r.json();
+      const rate = d?.rates?.TWD;
+      if(rate && rate > 20 && rate < 60){
+        FX.USDTWD = rate;
+        FX.updatedAt = Date.now();
+        updateFXDisplay(false);
+        return;
+      }
+    }
+  }catch{}
+
+  // fallback: jsDelivr CDN (每日更新)
+  try{
+    const r = await fetch(
+      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`,
+      {cache:'no-store', signal:AbortSignal.timeout(6000)});
+    if(r.ok){
+      const d = await r.json();
+      const rate = d?.usd?.twd;
+      if(rate && rate > 20 && rate < 60){
+        FX.USDTWD = rate;
+        FX.updatedAt = Date.now();
+        updateFXDisplay(false);
+        return;
+      }
+    }
+  }catch{}
+
+  updateFXDisplay(true); // 全部失敗，顯示估算值
+}
+
+function updateFXDisplay(estimated=false){
+  const el = document.getElementById('fx-rate-display');
+  if(el){
+    el.textContent = estimated
+      ? `USD/TWD ~${FX.USDTWD.toFixed(2)} (估算)`
+      : `USD/TWD ${FX.USDTWD.toFixed(2)}`;
+    el.style.color = estimated ? 'var(--a)' : 'var(--t2)';
+    el.title = estimated
+      ? '無法取得即時匯率，使用預設估算值 32.0'
+      : `更新於 ${new Date(FX.updatedAt).toLocaleTimeString('zh-TW',{hour12:false})}`;
+  }
+  // 更新停損標示（10億 USD → TWD）
+  const sl = document.getElementById('stop-limit-label');
+  if(sl) sl.textContent = `/ NT$${fmtc(1e9*FX.USDTWD)} (USD 10億)`;
+  const pr = document.getElementById('pill-r-stop');
+  if(pr) pr.textContent = `停損 NT$${fmtc(1e9*FX.USDTWD)}`;
+}
+
+// toTWD：把任何幣別的金額統一換算成 TWD
+function toTWD(amount, currency){
+  if(currency === 'USD') return amount * FX.USDTWD;
+  return amount; // TWD 直接返回
+}
+// symCurrency：根據代號判斷幣別
+function symCcy(sym){ return sym.endsWith('.TW') ? 'TWD' : 'USD'; }
+
+// ═══════════════════════════════════════════
+// FIREBASE / FIRESTORE
+// ═══════════════════════════════════════════
+
+const _fbConfig = {
+  apiKey: "AIzaSyBc0E5wlUzc9CyB_lP99rytCL3OE1iUxiw",
+  authDomain: "tdfb-cf0b1.firebaseapp.com",
+  projectId: "tdfb-cf0b1",
+  storageBucket: "tdfb-cf0b1.firebasestorage.app",
+  messagingSenderId: "850896720836",
+  appId: "1:850896720836:web:d1ba6998e52b20eb2eca91"
+};
+const _fbApp = initializeApp(_fbConfig);
+const _db = getFirestore(_fbApp);
+const _DOC = doc(_db, "trading", "default"); // single shared document
+
+// localStorage shims (kept for non-critical caching only)
+function ld(k,d){
+  if(k==='curve') return []; // pnlCurve always starts fresh (Firestore is source of truth)
+  try{return JSON.parse(localStorage.getItem('td3_'+k))||d}catch{return d}
+}
+function sv(k,v){try{localStorage.setItem('td3_'+k,JSON.stringify(v))}catch{}}
+function saveAll(){ /* no-op: Firestore is source of truth */ }
+
+// ── Load all state from Firestore ──────────────────────────────────────────
+async function loadFromAPI(){
+  try {
+    const snap = await getDoc(_DOC);
+    if(!snap.exists()){
+      // First ever load — initialise empty document
+      await setDoc(_DOC, {positions:[], options:[], trades:[], pnlCurve:[], updatedAt: serverTimestamp()});
+      console.log("✓ Firestore doc initialised");
+      return;
+    }
+    const d = snap.data();
+    positions = (d.positions||[]).map(p=>({...p, qty:parseFloat(p.qty), avg:parseFloat(p.avg)}));
+    options_p = (d.options||[]).map(o=>({...o, strike:parseFloat(o.strike), qty:parseInt(o.qty), avgPx:parseFloat(o.avgPx), iv:parseFloat(o.iv||30)}));
+    trades    = (d.trades||[]).map(t=>({...t}));
+    pnlCurve  = (d.pnlCurve||[]).map(p=>({t:p.t, v:parseFloat(p.v)}));
+    renderPositions(); renderOptions(); renderHistory(); updateBook();
+    console.log("✓ Loaded from Firestore:", positions.length, "pos,", options_p.length, "opts,", trades.length, "trades,", pnlCurve.length, "pnl pts");
+  } catch(e) {
+    console.error("Firestore load failed:", e);
+  }
+}
+
+// ── Write helpers ──────────────────────────────────────────────────────────
+async function _fsWrite(field, value){
+  try { await updateDoc(_DOC, {[field]: value, updatedAt: serverTimestamp()}); }
+  catch(e){ console.warn("Firestore write failed:", e); }
+}
+
+async function apiAddPosition(p){ await _fsWrite('positions', positions); }
+async function apiDelPosition(p){ await _fsWrite('positions', positions); }
+async function apiAddOption(o)  { await _fsWrite('options',   options_p); }
+async function apiDelOption(o)  { await _fsWrite('options',   options_p); }
+async function apiLogTrade(t)   { await _fsWrite('trades',    trades);    }
+
+let _lastPnlPush = 0;
+async function apiPushPnl(v){
+  const now = Date.now();
+  if(now - _lastPnlPush < 60000) return;
+  _lastPnlPush = now;
+  await _fsWrite('pnlCurve', pnlCurve.slice(-480));
+}
+
+// ═══════════════════════════════════════════
+// CLOCK + MARKET STATE
+// ═══════════════════════════════════════════
+function tick(){
+  const now=new Date();
+  document.getElementById('clock').textContent=
+    now.toLocaleTimeString('zh-TW',{hour12:false})+' · '+
+    now.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'});
+  const et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const em=et.getHours()*60+et.getMinutes(), ed=et.getDay();
+  marketState.nyse=ed>=1&&ed<=5&&em>=570&&em<960;
+  const tw=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Taipei'}));
+  const wm=tw.getHours()*60+tw.getMinutes(), wd=tw.getDay();
+  marketState.twse=wd>=1&&wd<=5&&wm>=540&&wm<810;
+  setMkt('nyse',marketState.nyse,'NYSE');
+  setMkt('twse',marketState.twse,'TWSE');
+  updateCardClosedState();
+}
+function setMkt(id,open,label){
+  const el=document.getElementById(id);
+  el.className='mkt '+(open?'open':'closed');
+  el.innerHTML=`<div class="dot${open?' pulse':''}" style="background:${open?'var(--g)':'var(--t3)'}"></div>${label} ${open?'開盤':'收盤'}`;
+}
+function updateCardClosedState(){
+  ALL_SYMS.forEach(sym=>{
+    const id='card-'+sym.replace(/\./g,'_');
+    const el=document.getElementById(id); if(!el)return;
+    const isOpen=sym.endsWith('.TW')?marketState.twse:marketState.nyse;
+    el.classList.toggle('mkt-closed-card',!isOpen);
+    let ov=el.querySelector('.closed-overlay');
+    if(!isOpen){if(!ov){ov=document.createElement('div');ov.className='closed-overlay';ov.textContent='收盤';el.appendChild(ov);}}
+    else{if(ov)ov.remove();}
+  });
+}
+
+// ═══════════════════════════════════════════
+// WEBSOCKET – Finnhub real-time (US)
+// 用 rAF 批次更新 DOM，避免每個 tick 都重繪
+// ═══════════════════════════════════════════
+let wsHB=null, wsRetry=null, wsDelay=3000;
+let _pendingUpdates={}; // sym -> {price, old}
+let _rafPending=false;
+
+function flushUpdates(){
+  _rafPending=false;
+  const syms=Object.keys(_pendingUpdates);
+  if(!syms.length)return;
+  syms.forEach(sym=>{
+    const {price,old}=_pendingUpdates[sym];
+    updateCard(sym,old);
+  });
+  _pendingUpdates={};
+  updateBook(); renderPositions(); renderOptions();
+}
+
+function scheduleFlush(){
+  if(_rafPending)return;
+  _rafPending=true;
+  requestAnimationFrame(flushUpdates);
+}
+
+function connectWS(){
+  if(ws){try{ws.close()}catch{}}
+  clearInterval(wsHB); clearTimeout(wsRetry);
+  ws=new WebSocket(`wss://ws.finnhub.io?token=${FKEY}`);
+  ws.onopen=()=>{
+    wsActive=true; wsDelay=3000;
+    document.getElementById('ws-status').className='live';
+    document.getElementById('ws-status').textContent='● LIVE';
+    US_SYMS.forEach(s=>ws.send(JSON.stringify({type:'subscribe',symbol:s})));
+    restFetchAll();
+    wsHB=setInterval(()=>{
+      if(ws&&ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({type:'ping'}));
+    },20000);
+  };
+  ws.onmessage=e=>{
+    try{
+      const msg=JSON.parse(e.data);
+      if(msg.type==='pong'||msg.type==='ping')return;
+      if(msg.type!=='trade'||!msg.data)return;
+      msg.data.forEach(t=>{
+        const sym=t.s;
+        if(!Q[sym])Q[sym]={};
+        const old=_pendingUpdates[sym]?.old??Q[sym].price; // 保留最初的 old
+        Q[sym].price=t.p;
+        Q[sym].vol=(Q[sym].vol||0)+t.v;
+        if(!Q[sym].open)Q[sym].open=t.p;
+        Q[sym].high=Math.max(Q[sym].high||0,t.p);
+        Q[sym].low=Q[sym].low?Math.min(Q[sym].low,t.p):t.p;
+        if(Q[sym].prevClose){Q[sym].change=t.p-Q[sym].prevClose;Q[sym].changePct=Q[sym].change/Q[sym].prevClose*100;}
+        if(!PH[sym])PH[sym]=[];
+        PH[sym].push(t.p);
+        if(PH[sym].length>200)PH[sym].shift();
+        _pendingUpdates[sym]={price:t.p,old};
+        scheduleFlush();
+      });
+    }catch{}
+  };
+  const onDrop=()=>{
+    wsActive=false; clearInterval(wsHB);
+    document.getElementById('ws-status').className='poll';
+    document.getElementById('ws-status').textContent='⟳ 輪詢';
+    if(!pollTimer)fallbackPoll();
+    wsRetry=setTimeout(()=>{connectWS();wsDelay=Math.min(wsDelay*2,60000);},wsDelay);
+  };
+  ws.onerror=onDrop; ws.onclose=onDrop;
+}
+function fallbackPoll(){
+  if(pollTimer)return;
+  // WS 斷線時：US 每 3s，TW 每 5s 交錯輪詢
+  let uIdx=0, tIdx=0;
+  pollTimer=setInterval(()=>{
+    // US 每次輪一個 symbol，避免同時打爆 rate limit
+    const uSym=US_SYMS[uIdx%US_SYMS.length]; uIdx++;
+    finnhubQuote(uSym).then(q=>{ if(q){ const old=Q[uSym]?.price; Q[uSym]=q; if(!PH[uSym])PH[uSym]=[]; PH[uSym].push(q.price); if(PH[uSym].length>200)PH[uSym].shift(); updateCard(uSym,old); updateBook(); }});
+  },400); // 400ms * 7 syms = ~3s per full cycle
+}
+
+// ═══════════════════════════════════════════
+// QUOTE FETCH
+// US  → Finnhub REST /quote (直接，CORS OK，不需proxy)
+// TW  → Stooq CSV (直接，CORS OK，不需proxy，不會cache)
+// ═══════════════════════════════════════════
+async function finnhubQuote(sym){
+  try{
+    const r=await fetch(
+      `https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FKEY}`,
+      {cache:'no-store',signal:AbortSignal.timeout(4000)}
+    );
+    if(!r.ok)throw 0;
+    const d=await r.json();
+    if(!d||!d.c||d.c===0)return null;
+    return {
+      price:d.c, prevClose:d.pc, open:d.o, high:d.h, low:d.l,
+      vol:null, w52h:null, w52l:null, pct52:null, mktCap:null,
+      currency:'USD', spark:[],
+      change:d.c-d.pc,
+      changePct:d.dp||0,
+    };
+  }catch{return null;}
+}
+
+async function stooqQuote(sym){
+  const s=sym.replace('.TW','.tw');
+  try{
+    const r=await fetch(
+      `https://stooq.com/q/l/?s=${s}&f=sd2t2ohlcv&h&e=csv&_=${Date.now()}`,
+      {cache:'no-store',signal:AbortSignal.timeout(5000)}
+    );
+    if(!r.ok)throw 0;
+    const text=await r.text();
+    const lines=text.trim().split('\n');
+    if(lines.length<2)throw 0;
+    const parts=lines[1].split(',');
+    const [,,,open,high,low,close,vol]=parts;
+    const price=parseFloat(close);
+    if(!price||price<=0)throw 0;
+    return {
+      price, prevClose:Q[sym]?.prevClose||null, open:parseFloat(open), high:parseFloat(high), low:parseFloat(low),
+      vol:parseFloat(vol), w52h:Q[sym]?.w52h||null, w52l:Q[sym]?.w52l||null,
+      pct52:Q[sym]?.pct52||null, mktCap:Q[sym]?.mktCap||null,
+      currency:'TWD', spark:Q[sym]?.spark||[],
+      change:Q[sym]?.prevClose?price-Q[sym].prevClose:0,
+      changePct:Q[sym]?.prevClose?(price-Q[sym].prevClose)/Q[sym].prevClose*100:0,
+    };
+  }catch{return null;}
+}
+
+// 為了取得台股昨收，補一個 Yahoo proxy（只在初始載入跑一次）
+async function yahooMeta(sym){
+  // 用多個 proxy，只要有一個成功就好（初始化用）
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=5d`;
+  const proxies=[
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}&t=${Date.now()}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  ];
+  for(const p of proxies){
+    try{
+      const r=await fetch(p,{cache:'no-store',signal:AbortSignal.timeout(8000)});
+      if(!r.ok)continue;
+      const d=await r.json();
+      const res=d?.chart?.result?.[0]; if(!res)continue;
+      const m=res.meta;
+      const qd=res.indicators?.quote?.[0]||{};
+      const closes=(qd.close||[]).filter(x=>x!=null);
+      const prev=m.previousClose||m.chartPreviousClose;
+      const p52=m.fiftyTwoWeekHigh&&m.fiftyTwoWeekLow
+        ?(m.regularMarketPrice-m.fiftyTwoWeekLow)/(m.fiftyTwoWeekHigh-m.fiftyTwoWeekLow)*100:null;
+      return {
+        price:m.regularMarketPrice, prevClose:prev,
+        open:m.regularMarketOpen, high:m.regularMarketDayHigh, low:m.regularMarketDayLow,
+        vol:m.regularMarketVolume, w52h:m.fiftyTwoWeekHigh, w52l:m.fiftyTwoWeekLow,
+        pct52:p52, mktCap:m.marketCap, currency:m.currency||'TWD',
+        spark:closes.slice(-30),
+        change:m.regularMarketPrice-prev,
+        changePct:prev?(m.regularMarketPrice-prev)/prev*100:0,
+      };
+    }catch{continue;}
+  }
+  return null;
+}
+
+// 主路由
+async function fetchQuote(sym){
+  if(sym.endsWith('.TW')){
+    // 先嘗試 Stooq（快、即時、不 cache）
+    const sq=await stooqQuote(sym);
+    if(sq){
+      // 補充 meta（prevClose 等），用已快取的或 Yahoo
+      if(Q[sym]?.prevClose) sq.prevClose=Q[sym].prevClose;
+      if(Q[sym]?.w52h){sq.w52h=Q[sym].w52h;sq.w52l=Q[sym].w52l;sq.pct52=Q[sym].pct52;sq.mktCap=Q[sym].mktCap;sq.spark=Q[sym].spark||[];}
+      if(sq.prevClose){sq.change=sq.price-sq.prevClose;sq.changePct=(sq.change/sq.prevClose)*100;}
+      return sq;
+    }
+    return yahooMeta(sym); // fallback
+  }
+  // US: Finnhub 直接打
+  return finnhubQuote(sym);
+}
+const yahooFetch=fetchQuote;
+
+// 啟動時補充 TW meta（昨收、52W 等）
+async function initTWMeta(){
+  for(const sym of TW_SYMS){
+    const q=await yahooMeta(sym);
+    if(q){
+      Q[sym]=q;
+      if(!PH[sym])PH[sym]=[];
+      PH[sym].push(q.price);
+      updateCard(sym,null);
+    }
+  }
+  updateBook(); renderPositions();
+}
+
+// ═══════════════════════════════════════════
+// REST FETCH — 交錯輪詢，避免 rate limit
+// ═══════════════════════════════════════════
+async function restFetchAll(){
+  await Promise.all(ALL_SYMS.map(async sym=>{
+    const q=await fetchQuote(sym);
+    if(q){
+      const old=Q[sym]?.price??null;
+      Q[sym]=q;
+      if(!PH[sym])PH[sym]=[];
+      PH[sym].push(q.price);
+      if(PH[sym].length>200)PH[sym].shift();
+      updateCard(sym,old);
+    }
+  }));
+  document.getElementById('lastUpd').textContent=
+    `更新: ${new Date().toLocaleTimeString('zh-TW',{hour12:false})}`;
+  updateBook(); renderPositions(); renderOptions();
+  saveAll();
+}
+
+// 單一 symbol 更新（交錯輪詢用）
+async function refreshSym(sym){
+  const q=await fetchQuote(sym);
+  const now=new Date().toLocaleTimeString('zh-TW',{hour12:false});
+  if(!q){
+    dbg(`${sym.replace('.TW','')} ✗ ${now}`,'#d93025');
+    return;
+  }
+  const old=Q[sym]?.price??null;
+  Q[sym]=q;
+  if(!PH[sym])PH[sym]=[];
+  PH[sym].push(q.price);
+  if(PH[sym].length>200)PH[sym].shift();
+  updateCard(sym,old);
+  updateBook();
+  renderPositions();
+  dbg(`${sym.replace('.TW','')} ${fmt(q.price)} ${now}`,'#0a8f5c');
+}
+
+// 畫面上可見的 debug 狀態列
+function dbg(msg, color){
+  const el=document.getElementById('lastUpd');
+  if(el){el.textContent=msg; el.style.color=color||'var(--t3)';}
+}
+
+// ═══════════════════════════════════════════
+// WATCHLIST CARDS
+// ═══════════════════════════════════════════
+function initCards(){
+  const g=document.getElementById('wlGrid'); g.innerHTML='';
+  ALL_SYMS.forEach(sym=>{
+    const isTW=sym.endsWith('.TW'), display=sym.replace('.TW','');
+    const div=document.createElement('div');
+    div.className='wl-card'; div.id='card-'+sym.replace(/\./g,'_');
+    div.innerHTML=`
+      <div class="card-top">
+        <div class="card-sym-block">
+          <div class="card-sym-row">
+            <span class="sym">${display}</span>
+            <span class="badge ${isTW?'b-tw':'b-us'}">${isTW?'TW':'US'}</span>
+          </div>
+          <div class="nm">${SYM_NAME[sym]||sym}</div>
+        </div>
+        <div class="card-price-block">
+          <div class="card-price flat" id="cp-${sym.replace(/\./g,'_')}">—</div>
+          <div class="card-chg flat" id="cc-${sym.replace(/\./g,'_')}">—</div>
+        </div>
+      </div>
+      <div class="card-stats">
+        <div class="cs"><div class="cs-l">開盤</div><div class="cs-v" id="co-${sym.replace(/\./g,'_')}">—</div></div>
+        <div class="cs"><div class="cs-l">最高</div><div class="cs-v" id="ch-${sym.replace(/\./g,'_')}">—</div></div>
+        <div class="cs"><div class="cs-l">最低</div><div class="cs-v" id="cl-${sym.replace(/\./g,'_')}">—</div></div>
+        <div class="cs"><div class="cs-l">成交量</div><div class="cs-v" id="cv-${sym.replace(/\./g,'_')}">—</div></div>
+        <div class="cs"><div class="cs-l">52W 高</div><div class="cs-v" id="cwh-${sym.replace(/\./g,'_')}">—</div></div>
+        <div class="cs"><div class="cs-l">市值</div><div class="cs-v" id="cm-${sym.replace(/\./g,'_')}">—</div></div>
+      </div>
+      <div class="range-row">
+        <div class="range-labels"><span>52週區間</span><span id="cr-${sym.replace(/\./g,'_')}">—</span></div>
+        <div class="range-track"><div class="range-fill" id="cb-${sym.replace(/\./g,'_')}" style="width:0%"></div></div>
+      </div>
+      <div class="card-bottom">
+        <div class="eps-block" id="ce-${sym.replace(/\./g,'_')}">EPS —</div>
+        <div id="cs-${sym.replace(/\./g,'_')}"></div>
+      </div>`;
+    g.appendChild(div);
+  });
+}
+
+function updateCard(sym, oldPrice){
+  const id=sym.replace(/\./g,'_'), q=Q[sym];
+  if(!q)return;
+  const card=document.getElementById('card-'+id); if(!card)return;
+  const isUp=q.change>0, isDn=q.change<0;
+  card.classList.toggle('up-c',isUp); card.classList.toggle('dn-c',isDn);
+
+  // 只在數字真的變了才 flash（避免浮點誤差）
+  const priceChanged = oldPrice != null && Math.abs(oldPrice - q.price) > 0.001;
+  if(priceChanged){
+    card.classList.remove('fgl','frl'); void card.offsetWidth;
+    card.classList.add(q.price > oldPrice ? 'fgl' : 'frl');
+  }
+
+  const pEl=document.getElementById('cp-'+id);
+  if(pEl){pEl.textContent=fmt(q.price);pEl.className='card-price '+cc(q.change);}
+  const cEl=document.getElementById('cc-'+id);
+  if(cEl){
+    cEl.className='card-chg '+cc(q.change);
+    cEl.textContent=`${sgn(q.change)}${fmt(q.change)} (${sgn(q.changePct)}${fmt(q.changePct)}%) · 昨收 ${fmt(q.prevClose)}`;
+  }
+  st(id,'co',fmt(q.open));st(id,'ch',fmt(q.high));st(id,'cl',fmt(q.low));
+  st(id,'cv',fmtc(q.vol));st(id,'cwh',fmt(q.w52h));st(id,'cm',fmtc(q.mktCap));
+  if(q.pct52!=null){
+    const b=document.getElementById('cb-'+id);if(b)b.style.width=Math.min(100,Math.max(0,q.pct52))+'%';
+    st(id,'cr',`${fmt(q.w52l)} – ${fmt(q.w52h)}`);
+  }
+  const sp=document.getElementById('cs-'+id);
+  if(sp)sp.innerHTML=sparkline(q.spark||PH[sym]||[],80,30);
+}
+function st(id,prefix,v){const e=document.getElementById(prefix+'-'+id);if(e)e.textContent=v;}
+function sparkline(data,w,h){
+  if(!data||data.length<2)return'';
+  const mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn||1;
+  const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/rng)*(h-4)+2}`).join(' ');
+  const fp=[`0,${h}`,...data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/rng)*(h-4)+2}`),`${w},${h}`].join(' ');
+  const c=data[data.length-1]>=data[0]?'var(--g)':'var(--r)';
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <defs><linearGradient id="sg${w}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${c}" stop-opacity=".2"/><stop offset="100%" stop-color="${c}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <polygon points="${fp}" fill="url(#sg${w})"/>
+    <polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// ═══════════════════════════════════════════
+// FORMAT
+// ═══════════════════════════════════════════
+const fmt=(n,d=2)=>n==null||isNaN(n)?'--':n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtc=n=>{if(n==null||isNaN(n))return'--';const a=Math.abs(n);return a>=1e12?(n/1e12).toFixed(2)+'T':a>=1e9?(n/1e9).toFixed(2)+'B':a>=1e6?(n/1e6).toFixed(2)+'M':a>=1e3?(n/1e3).toFixed(1)+'K':n.toFixed(2)};
+const cc=n=>n>0?'up':n<0?'dn':'flat';
+const sgn=n=>n>0?'+':n<0?'-':'';
+const fmtPnl=n=>{if(n==null||isNaN(n))return'--';return(n>=0?'+$':'-$')+fmtc(Math.abs(n));};
+// fmtTWD：統一以台幣顯示損益（已換算）
+const fmtTWD=n=>{if(n==null||isNaN(n))return'--';return(n>=0?'+NT$':'-NT$')+fmtc(Math.abs(n));};
+const fmtDate=ms=>new Date(ms).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const getName=sym=>SYM_NAME[sym]||sym;
+const getPrice=sym=>Q[sym]?.price||null;
+
+// ═══════════════════════════════════════════
+// POSITIONS
+// ═══════════════════════════════════════════
+function renderPositions(){
+  const tb=document.getElementById('posBody');
+  if(!positions.length){tb.innerHTML='<tr><td class="empty-td" colspan="11">尚無部位</td></tr>';return;}
+  tb.innerHTML='';
+  positions.forEach((p,i)=>{
+    const q=Q[p.sym]||{};
+    const px=q.price||p.avg;
+    const pc=q.prevClose||null;
+    const d=p.dir==='long'?1:-1;
+    const ccy=symCcy(p.sym);
+    const ccyLabel=ccy==='USD'?'USD':'TWD';
+
+    // 原幣損益
+    const unrealRaw=(px-p.avg)*p.qty*d;
+    const upct=p.avg?(unrealRaw/Math.abs(p.avg*p.qty))*100:0;
+    const todayRaw=pc!=null?(px-pc)*p.qty*d:null;
+    const mv=Math.abs(px*p.qty);
+    const dlt=px*p.qty*d;
+
+    // 換算成 TWD 顯示
+    const unrealTWD=toTWD(unrealRaw,ccy);
+    const todayTWD=todayRaw!=null?toTWD(todayRaw,ccy):null;
+    const dltTWD=toTWD(dlt,ccy);
+    const mvTWD=toTWD(mv,ccy);
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="l"><div class="sym-td">${p.sym.replace('.TW','')}</div><div class="nm-td">${getName(p.sym)}</div></td>
+      <td class="l"><span class="tb tb-${p.dir}">${p.dir.toUpperCase()}</span></td>
+      <td>${p.qty.toLocaleString()}</td>
+      <td>${fmt(p.avg)} <span style="font-size:9px;color:var(--t4)">${ccyLabel}</span></td>
+      <td class="${cc(q.change||0)}">${fmt(px)} <span style="font-size:9px;color:var(--t4)">${ccyLabel}</span></td>
+      <td>NT$${fmtc(mvTWD)}</td>
+      <td class="${cc(unrealTWD)}">${fmtTWD(unrealTWD)}<div style="font-size:9px;color:var(--t4)">(${ccyLabel} ${fmtPnl(unrealRaw)})</div></td>
+      <td class="${cc(upct)}">${sgn(upct)}${fmt(Math.abs(upct))}%</td>
+      <td class="${todayTWD!=null?cc(todayTWD):'flat'}">${todayTWD!=null?fmtTWD(todayTWD):'--'}</td>
+      <td class="${cc(dltTWD)}">NT$${fmtc(dltTWD)}</td>
+      <td><button class="btn-sm" onclick="closePos(${i})">平倉</button><button class="del" onclick="delPos(${i})">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function closePos(i){
+  const p=positions[i],q=Q[p.sym]||{};
+  const px=q.price||p.avg, d=p.dir==='long'?1:-1;
+  const ccy=symCcy(p.sym);
+  const rpnl=(px-p.avg)*p.qty*d; // 原幣
+  logTrade({sym:p.sym,type:'stock',action:'平倉',dir:p.dir,qty:p.qty,entryPx:p.avg,exitPx:px,rpnl,ccy});
+  apiDelPosition(p);
+  positions.splice(i,1);saveAll();renderPositions();updateBook();renderHistory();
+}
+function delPos(i){if(!confirm('刪除部位（不記錄損益）？'))return;apiDelPosition(positions[i]);positions.splice(i,1);saveAll();renderPositions();updateBook();}
+
+// ═══════════════════════════════════════════
+// OPTIONS (Black-Scholes)
+// ═══════════════════════════════════════════
+function renderOptions(){
+  const tb=document.getElementById('optBody');
+  if(!options_p.length){tb.innerHTML='<tr><td class="empty-td" colspan="14">尚無選擇權</td></tr>';return;}
+  tb.innerHTML='';
+  options_p.forEach((o,i)=>{
+    const q=Q[o.und]||{}, spot=q.price||o.strike, d=o.dir==='long'?1:-1;
+    const ccy=symCcy(o.und);
+    const mult=ccy==='TWD'?2000:100; // 台灣個股選擇權1口=2,000股；美股=100股
+    const bs=bsPrice(o,spot);
+    const unrealRaw=(bs-o.avgPx)*o.qty*mult*d;
+    const unrealTWD=toTWD(unrealRaw,ccy);
+    const g=bsGreeks(o,spot);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="l"><span class="sym-td">${o.und.replace('.TW','')}</span>
+        <span style="font-size:9px;color:var(--t4);margin-left:4px">${ccy}</span></td>
+      <td><span class="tb tb-${o.type}">${o.type.toUpperCase()}</span></td>
+      <td><span class="tb tb-${o.dir}">${o.dir.toUpperCase()}</span></td>
+      <td>${fmt(o.strike)}</td>
+      <td style="color:var(--t2)">${o.expiry}</td>
+      <td>${o.qty}<span style="font-size:9px;color:var(--t4)">×${mult}</span></td>
+      <td>${fmt(o.avgPx)} <span style="font-size:9px;color:var(--t4)">${ccy}</span></td>
+      <td style="color:var(--cy)">${fmt(bs)} <span style="font-size:9px;color:var(--t4)">${ccy}</span></td>
+      <td class="${cc(unrealTWD)}">${fmtTWD(unrealTWD)}<div style="font-size:9px;color:var(--t4)">(${ccy} ${fmtPnl(unrealRaw)})</div></td>
+      <td style="color:var(--bl)">${fmt(g.delta,3)}</td>
+      <td style="color:var(--cy)">${fmt(g.gamma,4)}</td>
+      <td style="color:var(--r)">${fmt(g.theta,3)}</td>
+      <td style="color:var(--pu)">${fmt(g.vega,3)}</td>
+      <td><button class="del" onclick="delOpt(${i})">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function delOpt(i){if(!confirm('刪除？'))return;apiDelOption(options_p[i]);options_p.splice(i,1);saveAll();renderOptions();updateBook();}
+
+function bsPrice(o,S){
+  const K=o.strike,T=Math.max(.002,(new Date(o.expiry)-Date.now())/(365*86400000));
+  const r=.05,sig=(o.iv||30)/100;
+  const d1=(Math.log(S/K)+(r+.5*sig*sig)*T)/(sig*Math.sqrt(T)),d2=d1-sig*Math.sqrt(T);
+  if(o.type==='call')return Math.max(0,S*Φ(d1)-K*Math.exp(-r*T)*Φ(d2));
+  return Math.max(0,K*Math.exp(-r*T)*Φ(-d2)-S*Φ(-d1));
+}
+function bsGreeks(o,S){
+  const K=o.strike,T=Math.max(.002,(new Date(o.expiry)-Date.now())/(365*86400000));
+  const r=.05,sig=(o.iv||30)/100;
+  const d1=(Math.log(S/K)+(r+.5*sig*sig)*T)/(sig*Math.sqrt(T)),d2=d1-sig*Math.sqrt(T);
+  const φ=Math.exp(-.5*d1*d1)/Math.sqrt(2*Math.PI),nd1=Φ(d1),nd2=Φ(d2);
+  const sd=o.dir==='long'?1:-1,γ=φ/(S*sig*Math.sqrt(T));
+  if(o.type==='call')return{delta:nd1*sd,gamma:γ*sd,theta:-(S*φ*sig/(2*Math.sqrt(T))+r*K*Math.exp(-r*T)*nd2)/365*sd,vega:S*Math.sqrt(T)*φ/100*sd};
+  return{delta:(nd1-1)*sd,gamma:γ*sd,theta:-(S*φ*sig/(2*Math.sqrt(T))-r*K*Math.exp(-r*T)*Φ(-d2))/365*sd,vega:S*Math.sqrt(T)*φ/100*sd};
+}
+function Φ(x){const a=[.319381530,-.356563782,1.781477937,-1.821255978,1.330274429],t=1/(1+.2316419*Math.abs(x));const p=t*(a[0]+t*(a[1]+t*(a[2]+t*(a[3]+t*a[4]))));const n=Math.exp(-.5*x*x)/Math.sqrt(2*Math.PI);const v=1-n*p;return x>=0?v:1-v;}
+
+// ═══════════════════════════════════════════
+// BOOK BAR
+// ═══════════════════════════════════════════
+function updateBook(){
+  let today=0, unreal=0, mv=0, delta=0;
+
+  positions.forEach(p=>{
+    const q=Q[p.sym]||{}, px=q.price||p.avg, pc=q.prevClose??null, d=p.dir==='long'?1:-1;
+    const ccy=symCcy(p.sym);
+    // 全部換算成 TWD
+    const unrealRaw=(px-p.avg)*p.qty*d;
+    unreal += toTWD(unrealRaw, ccy);
+    if(pc!=null) today += toTWD((px-pc)*p.qty*d, ccy);
+    mv  += toTWD(Math.abs(px*p.qty), ccy);
+    delta += toTWD(px*p.qty*d, ccy);
+  });
+
+  options_p.forEach(o=>{
+    const q=Q[o.und]||{}, sp=q.price||o.strike, d=o.dir==='long'?1:-1;
+    const ccy=symCcy(o.und);
+    const mult=ccy==='TWD'?2000:100; // 台灣個股選擇權1口=2,000股；美股=100股
+    const bs=bsPrice(o,sp);
+    unreal += toTWD((bs-o.avgPx)*o.qty*mult*d, ccy);
+    mv     += toTWD(bs*o.qty*mult, ccy);
+    delta  += toTWD(bsGreeks(o,sp).delta*o.qty*mult*sp, ccy);
+  });
+
+  // 已實現損益：trade 記錄時就帶 ccy，沒有就依 sym 判斷
+  const realized=trades.filter(t=>t.rpnl!=null)
+    .reduce((s,t)=>s+toTWD(t.rpnl||0, t.ccy||symCcy(t.sym||'')),0);
+
+  // 真正的 Drawdown：從 pnlCurve 最高點到現在的回落（含已實現）
+  const totalPnl = unreal + realized; // today は volatile なので除外（spike 防止）
+  // Throttle: only record one data point per 60 seconds to keep chart meaningful
+  const _now=Date.now();
+  const _last=pnlCurve.length?pnlCurve[pnlCurve.length-1].t:0;
+  if(_now-_last >= 60000 || pnlCurve.length===0){
+    pnlCurve.push({t:_now, v:totalPnl});
+    apiPushPnl(totalPnl);
+  } else {
+    // Update current point in place (don't add new point)
+    pnlCurve[pnlCurve.length-1].v = totalPnl;
+  }
+  if(pnlCurve.length>480) pnlCurve.shift(); // 480 min = 8 hours
+  const peak = Math.max(0, ...pnlCurve.map(p=>p.v));
+  const draw = Math.max(0, peak - totalPnl); // 從高點回落多少
+
+  const STOP = 1e9 * FX.USDTWD; // 停損線也換算成 TWD
+  const dpct = (draw / STOP) * 100;
+
+  bk('bk0', fmtTWD(today),   cc(today));
+  bk('bk1', fmtTWD(unreal),  cc(unreal));
+  bk('bk2', fmtTWD(realized),cc(realized));
+  bk('bk3', 'NT$'+fmtc(mv));
+  bk('bk4', fmtTWD(delta),   cc(delta));
+  bk('bk5', 'NT$'+fmtc(draw), draw>STOP*0.5?'dn':draw>STOP*0.1?'flat':'up');
+  document.getElementById('bk5s').textContent=`${fmt(dpct,1)}% used`;
+  bk('bk6',`${positions.length+options_p.length}`);
+  document.getElementById('bk6s').textContent=`選擇權: ${options_p.length}`;
+  document.getElementById('stopfill').style.width=Math.min(100,dpct)+'%';
+  document.getElementById('stopamt').textContent='NT$'+fmtc(draw);
+}
+function bk(id,v,cls){const e=document.getElementById(id);if(!e)return;e.textContent=v;if(cls)e.className='bc-v '+cls;}
+
+// ═══════════════════════════════════════════
+// RISK
+// ═══════════════════════════════════════════
+function renderRisk(){drawBar();drawLine();drawGreeks();drawAlerts();}
+function drawBar(){
+  const cv=document.getElementById('cBar');if(!cv)return;
+  const DPR=window.devicePixelRatio||1;
+  const W=cv.parentElement.clientWidth||500, H=220;
+  cv.width=W*DPR; cv.height=H*DPR;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  const ctx=cv.getContext('2d'); ctx.scale(DPR,DPR);
+  ctx.clearRect(0,0,W,H);
+  const C={t1:'#1a2133',t2:'#4a5568',t3:'#718096',t4:'#a0aec0',b1:'#d4dae4',g:'#0a8f5c',r:'#d93025'};
+  const data=[];
+  positions.forEach(p=>{
+    const q=Q[p.sym]||{},px=q.price||p.avg,d=p.dir==='long'?1:-1;
+    data.push({l:p.sym.replace('.TW',''),v:toTWD((px-p.avg)*p.qty*d,symCcy(p.sym))});
+  });
+  options_p.forEach(o=>{
+    const q=Q[o.und]||{},sp=q.price||o.strike,d=o.dir==='long'?1:-1;
+    const ccy=symCcy(o.und),mult=ccy==='TWD'?2000:100;
+    data.push({l:o.und.replace('.TW','')+' '+o.type[0].toUpperCase(),v:toTWD((bsPrice(o,sp)-o.avgPx)*o.qty*mult*d,ccy)});
+  });
+  if(!data.length){ctx.fillStyle=C.t4;ctx.font='12px JetBrains Mono';ctx.textAlign='center';ctx.fillText('尚無部位資料',W/2,H/2);return;}
+  const padL=56,padR=16,padT=24,padB=32;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  const maxA=Math.max(...data.map(d=>Math.abs(d.v)),1);
+  const mid=padT+chartH/2;
+  // Y grid lines & labels
+  const yTicks=[maxA,maxA/2,0,-maxA/2,-maxA];
+  yTicks.forEach(v=>{
+    const y=mid-(v/maxA)*(chartH/2);
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.setLineDash([]);
+    if(v!==0){
+      ctx.fillStyle=C.t4;ctx.font='9px JetBrains Mono';ctx.textAlign='right';
+      ctx.fillText((v>0?'+':'')+fmtc(v),padL-4,y+3);
+    }
+  });
+  // Zero axis
+  ctx.strokeStyle=C.b1;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(padL,mid);ctx.lineTo(W-padR,mid);ctx.stroke();
+  ctx.fillStyle=C.t4;ctx.font='9px JetBrains Mono';ctx.textAlign='right';ctx.fillText('0',padL-4,mid+3);
+  // Bars
+  const n=data.length, bw=Math.min(40,Math.floor(chartW/n*0.6));
+  const step=chartW/n;
+  data.forEach((d,i)=>{
+    const x=padL+i*step+step/2;
+    const bh=Math.max(2,(Math.abs(d.v)/maxA)*(chartH/2));
+    const pos=d.v>=0;
+    const g=ctx.createLinearGradient(0,pos?mid-bh:mid,0,pos?mid:mid+bh);
+    if(pos){g.addColorStop(0,'rgba(10,143,92,.85)');g.addColorStop(1,'rgba(10,143,92,.2)');}
+    else{g.addColorStop(0,'rgba(217,48,37,.2)');g.addColorStop(1,'rgba(217,48,37,.85)');}
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    const by=pos?mid-bh:mid;
+    ctx.roundRect(x-bw/2,by,bw,bh,2);ctx.fill();
+    const valLabel='NT$'+fmtc(d.v);
+    // Symbol label always at fixed bottom
+    ctx.fillStyle=C.t2;ctx.font='10px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText(d.l,x,H-padB+16);
+    // Value label: above bar if positive, below if negative
+    // If bar too short and would overlap symbol, put inside bar
+    ctx.font='bold 9px JetBrains Mono';ctx.textAlign='center';
+    if(pos){
+      const ly=mid-bh-5;
+      ctx.fillStyle=C.g;
+      ctx.fillText(valLabel,x,Math.max(ly,padT+10));
+    } else {
+      const ly=mid+bh+12;
+      const symY=H-padB+16;
+      if(ly+10 >= symY-2){ 
+        // Overlap: draw inside bar with background
+        if(bh>14){
+          ctx.fillStyle='rgba(255,255,255,0.85)';
+          const tw=ctx.measureText(valLabel).width;
+          ctx.fillRect(x-tw/2-2,mid+bh-14,tw+4,12);
+          ctx.fillStyle=C.r;ctx.fillText(valLabel,x,mid+bh-4);
+        }
+      } else {
+        ctx.fillStyle=C.r;ctx.fillText(valLabel,x,ly);
+      }
+    }
+  });
+}
+function drawLine(){
+  const cv=document.getElementById('cLine');if(!cv)return;
+  const DPR=window.devicePixelRatio||1;
+  const W=cv.parentElement.clientWidth||500, H=220;
+  cv.width=W*DPR; cv.height=H*DPR;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  const ctx=cv.getContext('2d'); ctx.scale(DPR,DPR);
+  ctx.clearRect(0,0,W,H);
+  const C={t3:'#718096',t4:'#a0aec0',g:'#0a8f5c',r:'#d93025'};
+  if(pnlCurve.length<2){
+    ctx.fillStyle=C.t4;ctx.font='11px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText('尚無足夠資料（每分鐘記錄一筆）',W/2,H/2);return;
+  }
+  const padL=68,padR=16,padT=20,padB=28;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  // Use real timestamps for X axis
+  const pts=pnlCurve;
+  const t0=pts[0].t, t1=pts[pts.length-1].t, tRng=t1-t0||1;
+  const vs=pts.map(p=>p.v);
+  const rawMin=Math.min(...vs), rawMax=Math.max(...vs);
+  // Y range: include 0, add 15% padding
+  const yPad=Math.max(Math.abs(rawMax),Math.abs(rawMin))*0.15||50;
+  const mn=Math.min(rawMin,0)-yPad;
+  const mx=Math.max(rawMax,0)+yPad;
+  const yRng=mx-mn;
+  const toX=t=>padL+(t-t0)/tRng*chartW;
+  const toY=v=>padT+chartH-(v-mn)/yRng*chartH;
+  const zy=toY(0);
+  // Y ticks — nice round steps, no overlap
+  const rawAbs=Math.max(Math.abs(mx),Math.abs(mn));
+  const mag=Math.pow(10,Math.floor(Math.log10(rawAbs||1)));
+  const niceStep=[1,2,5,10].map(m=>m*mag).find(s=>chartH/(yRng/s)>=18)||mag*10;
+  let lastLY=-99;
+  for(let v=Math.ceil(mn/niceStep)*niceStep; v<=mx+niceStep*0.01; v=Math.round((v+niceStep)*1000)/1000){
+    const y=toY(v);
+    if(y<padT-2||y>padT+chartH+2)continue;
+    if(Math.abs(y-lastLY)<14)continue;
+    lastLY=y;
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.setLineDash([]);
+    // Colour: green if positive, red if negative, grey for zero
+    const col=v>50?C.g:v<-50?C.r:C.t4;
+    ctx.fillStyle=col;ctx.font='9px JetBrains Mono';ctx.textAlign='right';
+    const label=(v>=0?'+':'')+fmtc(v);
+    ctx.fillText('NT$'+label,padL-4,y+3);
+  }
+  // Zero line
+  if(zy>=padT&&zy<=padT+chartH){
+    ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(padL,zy);ctx.lineTo(W-padR,zy);ctx.stroke();ctx.setLineDash([]);
+  }
+  // X axis time labels — evenly spaced with overlap prevention
+  const xTicks=Math.min(4,pts.length-1);
+  let lastXLabel=-99;
+  for(let i=0;i<=xTicks;i++){
+    const idx=Math.round(i*(pts.length-1)/xTicks);
+    const t=pts[idx].t;
+    const x=toX(t);
+    const dt=new Date(t);
+    const lbl=dt.getHours().toString().padStart(2,'0')+':'+dt.getMinutes().toString().padStart(2,'0');
+    if(x-lastXLabel<34)continue; // min 34px gap between labels
+    lastXLabel=x;
+    ctx.fillStyle=C.t4;ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText(lbl,x,H-4);
+    ctx.strokeStyle='rgba(0,0,0,0.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,padT+chartH);ctx.stroke();
+  }
+  // Fill area (clip to chart)
+  ctx.save();ctx.beginPath();ctx.rect(padL,padT,chartW,chartH);ctx.clip();
+  // Profit fill (above zero)
+  ctx.beginPath();ctx.moveTo(toX(pts[0].t),zy);
+  pts.forEach(p=>ctx.lineTo(toX(p.t),p.v>=0?toY(p.v):zy));
+  ctx.lineTo(toX(pts[pts.length-1].t),zy);ctx.closePath();
+  ctx.fillStyle='rgba(10,143,92,0.13)';ctx.fill();
+  // Loss fill (below zero)
+  ctx.beginPath();ctx.moveTo(toX(pts[0].t),zy);
+  pts.forEach(p=>ctx.lineTo(toX(p.t),p.v<0?toY(p.v):zy));
+  ctx.lineTo(toX(pts[pts.length-1].t),zy);ctx.closePath();
+  ctx.fillStyle='rgba(217,48,37,0.10)';ctx.fill();
+  // Line — colour segments by sign
+  let prevAboveZero=pts[0].v>=0;
+  ctx.beginPath();ctx.moveTo(toX(pts[0].t),toY(pts[0].v));
+  pts.forEach((p,i)=>{
+    if(i===0)return;
+    const aboveZero=p.v>=0;
+    if(aboveZero!==prevAboveZero){
+      // Colour change: finish current segment
+      ctx.strokeStyle=prevAboveZero?C.g:C.r;ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.moveTo(toX(pts[i-1].t),toY(pts[i-1].v));
+      prevAboveZero=aboveZero;
+    }
+    ctx.lineTo(toX(p.t),toY(p.v));
+  });
+  ctx.strokeStyle=prevAboveZero?C.g:C.r;ctx.lineWidth=2;ctx.stroke();
+  ctx.restore();
+  // Current value label (top right)
+  const last=pts[pts.length-1].v;
+  ctx.fillStyle=last>=0?C.g:C.r;ctx.font='bold 11px JetBrains Mono';ctx.textAlign='right';
+  ctx.fillText((last>=0?'+':'')+fmtTWD(last),W-padR,padT-4);
+  // Duration label — top-left inside chart area, not on X axis
+  const durMin=Math.round((t1-t0)/60000);
+  ctx.fillStyle=C.t4;ctx.font='8px JetBrains Mono';ctx.textAlign='left';
+  ctx.fillText('過去 '+(durMin<60?durMin+'分鐘':Math.round(durMin/60)+'小時'),padL+4,padT+11);
+}
+function drawGreeks(){
+  const el=document.getElementById('greekBox');if(!el)return;
+  if(!options_p.length){el.innerHTML='<div style="color:var(--t4);padding:8px 0;font-size:11px">尚無選擇權部位</div>';return;}
+  let dlt=0,gam=0,tht=0,vga=0;
+  options_p.forEach(o=>{
+    const q=Q[o.und]||{},sp=q.price||o.strike;
+    const ccy=symCcy(o.und), mult=ccy==='TWD'?2000:100;
+    const g=bsGreeks(o,sp);
+    dlt+=g.delta*o.qty*mult;
+    gam+=g.gamma*o.qty*mult;
+    tht+=g.theta*o.qty*mult;
+    vga+=g.vega*o.qty*mult;
+  });
+  el.innerHTML=`<div class="greek-row">
+    <div class="gi"><div class="gi-l">Net Δ Delta</div><div class="gi-v ${cc(dlt)}">${sgn(dlt)}${fmt(dlt,2)}</div></div>
+    <div class="gi"><div class="gi-l">Net Γ Gamma</div><div class="gi-v" style="color:var(--cy)">${fmt(gam,4)}</div></div>
+    <div class="gi"><div class="gi-l">Net Θ Theta/日</div><div class="gi-v dn">${fmt(tht,2)}</div></div>
+    <div class="gi"><div class="gi-l">Net ν Vega</div><div class="gi-v" style="color:var(--pu)">${fmt(vga,2)}</div></div>
+    <div class="gi"><div class="gi-l">口數</div><div class="gi-v">${options_p.length}</div></div>
+    <div class="gi"><div class="gi-l">USD/TWD</div><div class="gi-v" style="color:var(--t2)">${FX.USDTWD.toFixed(2)}</div></div>
+  </div>`;
+}
+function drawAlerts(){
+  const box=document.getElementById('alertBox');if(!box)return;box.innerHTML='';
+  const STOP = 1e9 * FX.USDTWD;
+  // 從 pnlCurve 算真正的 drawdown
+  const vals=pnlCurve.map(p=>p.v);
+  const peak=vals.length?Math.max(0,...vals):0;
+  const cur=vals.length?vals[vals.length-1]:0;
+  const draw=Math.max(0, peak-cur);
+  if(draw>=STOP*0.9)addA(box,'d',`🚨 緊急：Drawdown NT$${fmtc(draw)} 已逼近停損線！`);
+  else if(draw>=STOP*0.5)addA(box,'w',`⚠ 警告：Drawdown NT$${fmtc(draw)}，距停損剩 NT$${fmtc(STOP-draw)}`);
+  else if(!positions.length&&!options_p.length)addA(box,'i','ℹ 目前無持倉部位');
+}
+function addA(b,t,m){const d=document.createElement('div');d.className='alert alert-'+t;d.textContent=m;b.appendChild(d);}
+
+// ═══════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════
+function logTrade(t){const entry={...t,ts:Date.now()};trades.unshift(entry);saveAll();renderHistory();apiLogTrade(entry);}
+function renderHistory(){
+  // 已實現損益統一換成 TWD 加總
+  const toTWDpnl=t=>toTWD(t.rpnl||0, t.ccy||symCcy(t.sym||''));
+  const wins=trades.filter(t=>t.rpnl>0),losses=trades.filter(t=>t.rpnl<0);
+  const real=trades.filter(t=>t.rpnl!=null).reduce((s,t)=>s+toTWDpnl(t),0);
+  const aw=wins.length?wins.reduce((s,t)=>s+toTWDpnl(t),0)/wins.length:0;
+  const al=losses.length?losses.reduce((s,t)=>s+toTWDpnl(t),0)/losses.length:0;
+  const tot=trades.length,wp=tot?(wins.length/tot*100):0;
+  s2('hs0',tot);
+  s2('hs1',fmt(wp,1)+'%');document.getElementById('hs1s').textContent=`盈 ${wins.length} / 虧 ${losses.length}`;
+  const re=document.getElementById('hs2');re.textContent=fmtTWD(real);re.className='hs-v '+cc(real);
+  s2('hs3','+NT$'+fmtc(aw));s2('hs4','-NT$'+fmtc(Math.abs(al)));
+  const tb=document.getElementById('histBody');
+  if(!trades.length){tb.innerHTML='<tr><td class="empty-td" colspan="9">尚無交易記錄</td></tr>';return;}
+  tb.innerHTML='';
+  trades.forEach(t=>{
+    const ccy=t.ccy||symCcy(t.sym||'');
+    const pnlTWD=t.rpnl!=null?toTWD(t.rpnl,ccy):null;
+    const res=pnlTWD==null?'—':pnlTWD>0?'win':pnlTWD<0?'loss':'flat';
+    const pnlTd=pnlTWD!=null
+      ?`<td class="${cc(pnlTWD)}">${fmtTWD(pnlTWD)}<div style="font-size:9px;color:var(--t4)">${ccy} ${fmtPnl(t.rpnl)}</div></td>`
+      :`<td style="color:var(--t3)">開倉中</td>`;
+    const wb=res==='—'?'':`<span class="wb ${res}">${res==='win'?'盈利':res==='loss'?'虧損':'持平'}</span>`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="l" style="color:var(--t3);font-size:10px">${fmtDate(t.ts)}</td>
+      <td class="l"><span class="sym-td" style="font-size:12px">${t.sym.replace('.TW','')}</span>
+        <span style="font-size:9px;color:var(--t4);margin-left:3px">${ccy}</span></td>
+      <td><span class="tb ${t.type==='option'?(t.optType==='call'?'tb-call':'tb-put'):'b-us'}" style="font-size:8px">${t.type==='option'?t.optType?.toUpperCase():'STOCK'}</span></td>
+      <td><span class="tb ${t.action==='開倉'?'tb-buy':'tb-sell'}">${t.action} ${t.dir?'('+t.dir+')':''}</span></td>
+      <td>${t.qty}</td><td>${fmt(t.entryPx)} ${ccy}</td>
+      <td>${t.exitPx!=null?fmt(t.exitPx)+' '+ccy:'—'}</td>
+      ${pnlTd}<td>${wb}</td>`;
+    tb.appendChild(tr);
+  });
+}
+function s2(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+
+// ═══════════════════════════════════════════
+// OPTION CHAIN MODAL — 有鏈就用真實，沒鏈就 BS，兩路都能儲存
+// ═══════════════════════════════════════════
+const symOpts=ALL_SYMS.map(s=>`<option value="${s}">${s.replace('.TW','')} — ${SYM_NAME[s]}</option>`).join('');
+
+// 全域暫存選到的選擇權資料（不靠 hidden input）
+let _optDraft = { strike:null, expiry:null, avg:null, iv:30 };
+
+function openModal(mode){
+  mMode=mode;
+  _optDraft={strike:null,expiry:null,avg:null,iv:30};
+  const b=document.getElementById('mBody'),t=document.getElementById('mTitle');
+  if(mode==='option'){
+    t.textContent='新增選擇權部位';
+    b.innerHTML=`
+    <div class="fgrid">
+      <div class="fg full"><label>標的</label>
+        <select id="f-sym" onchange="optChainLoad()">${symOpts}</select>
+      </div>
+      <div class="fg"><label>類型</label>
+        <select id="f-type" onchange="optChainRenderStrikes()">
+          <option value="call">Call (買權)</option>
+          <option value="put">Put (賣權)</option>
+        </select>
+      </div>
+      <div class="fg"><label>方向</label>
+        <select id="f-dir">
+          <option value="long">Long (買)</option>
+          <option value="short">Short (賣)</option>
+        </select>
+      </div>
+    </div>
+    <div id="chain-area" style="margin-top:10px">
+      <div style="color:var(--t3);font-size:10px">⟳ 載入中…</div>
+    </div>
+    <div class="fgrid" style="margin-top:10px">
+      <div class="fg"><label>口數 (contracts)</label>
+        <input id="f-qty" type="number" value="1" min="1">
+      </div>
+      <div class="fg"><label>IV% (可手動改)</label>
+        <input id="f-iv" type="number" value="30" min="1" max="500" onchange="_optDraft.iv=parseFloat(this.value)||30">
+      </div>
+      <div class="fg full"><label>成交均價</label>
+        <input id="f-avg" type="number" step=".01" oninput="_optDraft.avg=parseFloat(this.value)">
+      </div>
+    </div>
+    <div class="opt-hint" id="optHint" style="margin-top:8px">選擇標的後自動載入…</div>`;
+    setTimeout(optChainLoad,50);
+  }else{
+    t.textContent='新增股票部位';
+    b.innerHTML=`<div class="fgrid">
+      <div class="fg full"><label>標的</label><select id="f-sym" onchange="stockFillPrice()">${symOpts}</select></div>
+      <div class="fg"><label>方向</label><select id="f-dir"><option value="long">Long (多)</option><option value="short">Short (空)</option></select></div>
+      <div class="fg"><label>數量（股）</label><input id="f-qty" type="number" placeholder="1000" min="1"></div>
+      <div class="fg full"><label>均價（自動帶入現價）</label><input id="f-avg" type="number" step=".01"></div>
+    </div>
+    <div id="stockPriceHint" style="font-size:10px;color:var(--t3);margin-top:8px"></div>`;
+    setTimeout(stockFillPrice,50);
+  }
+  document.getElementById('overlay').classList.add('on');
+}
+
+function stockFillPrice(){
+  const sym=document.getElementById('f-sym')?.value, px=getPrice(sym);
+  const ccy=symCcy(sym||'');
+  if(px){
+    const inp=document.getElementById('f-avg');if(inp)inp.value=px.toFixed(2);
+    const hint=document.getElementById('stockPriceHint');
+    if(hint)hint.innerHTML=`<span style="color:var(--g)">● 現價: ${fmt(px)} ${ccy}</span> · 已自動帶入 · <span style="color:var(--t3)">損益將換算為 NT$ 顯示</span>`;
+  }
+}
+
+// ── proxy fetch（試多個，全失敗回 null）
+async function yoFetch(url){
+  const t=Date.now();
+  const proxies=[
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url+(url.includes('?')?'&':'?')+'_='+t)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  ];
+  for(const p of proxies){
+    try{
+      const r=await fetch(p,{cache:'no-store',signal:AbortSignal.timeout(9000)});
+      if(!r.ok)continue;
+      const d=await r.json();
+      if(d?.optionChain?.result?.[0])return d;
+    }catch{}
+  }
+  return null;
+}
+
+// ── 載入到期日清單
+async function optChainLoad(){
+  const sym=document.getElementById('f-sym')?.value; if(!sym)return;
+  _optDraft={strike:null,expiry:null,avg:null,iv:30};
+  const area=document.getElementById('chain-area');
+  const hint=document.getElementById('optHint');
+  area.innerHTML=`<div style="color:var(--t3);font-size:10px">⟳ 載入 ${sym.replace('.TW','')} 選擇權鏈…</div>`;
+
+  const d=await yoFetch(`https://query1.finance.yahoo.com/v7/finance/options/${encodeURIComponent(sym)}`);
+
+  if(!d){
+    // ── 全部 proxy 失敗 → 手動 BS 模式
+    renderBSMode(sym);
+    return;
+  }
+  const res=d.optionChain.result[0];
+  const expiries=res.expirationDates||[];
+  if(!expiries.length){ renderBSMode(sym); return; }
+
+  area.innerHTML=`
+    <div class="fgrid">
+      <div class="fg full"><label>到期日（市場真實）</label>
+        <select id="f-expiry-sel" onchange="optChainRenderStrikes()">
+          ${expiries.map(ts=>{
+            const dt=new Date(ts*1000);
+            return `<option value="${ts}">${dt.toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit'})}</option>`;
+          }).join('')}
+        </select>
+      </div>
+      <div class="fg full"><label>履約價（Bid / Ask / IV / OI）</label>
+        <select id="f-strike-sel" onchange="optChainApply(this.value)" style="font-size:11px">
+          <option value="">-- 載入中… --</option>
+        </select>
+      </div>
+    </div>`;
+  hint.innerHTML=`<span style="color:var(--g)">✓ ${expiries.length} 個到期日</span>`;
+  await optChainRenderStrikes();
+}
+
+// ── 載入特定到期日的履約價
+async function optChainRenderStrikes(){
+  const sym=document.getElementById('f-sym')?.value;
+  const exSel=document.getElementById('f-expiry-sel');
+  const stSel=document.getElementById('f-strike-sel');
+  const hint=document.getElementById('optHint');
+  const type=document.getElementById('f-type')?.value||'call';
+  if(!exSel||!stSel)return;
+  const ts=exSel.value; if(!ts)return;
+
+  // 記錄 expiry 到 draft
+  _optDraft.expiry=new Date(parseInt(ts)*1000).toISOString().slice(0,10);
+
+  stSel.innerHTML='<option>載入中…</option>';
+  if(hint)hint.innerHTML=`<span style="color:var(--t3)">⟳ 載入履約價…</span>`;
+
+  const d=await yoFetch(`https://query1.finance.yahoo.com/v7/finance/options/${encodeURIComponent(sym)}?date=${ts}`);
+  if(!d){
+    if(stSel)stSel.innerHTML='<option value="">proxy 失敗，請手動輸入</option>';
+    renderBSMode(sym); return;
+  }
+  const opts=d.optionChain.result[0]?.options?.[0];
+  const contracts=(type==='call'?opts?.calls:opts?.puts)||[];
+
+  const spot=getPrice(sym)||0;
+  contracts.sort((a,b)=>a.strike-b.strike);
+
+  stSel.innerHTML=contracts.map(c=>{
+    const mid=((c.bid||0)+(c.ask||0))/2;
+    const iv=c.impliedVolatility?(c.impliedVolatility*100).toFixed(1):'--';
+    const oi=(c.openInterest||0).toLocaleString();
+    const atm=spot&&Math.abs(c.strike-spot)/spot<0.025?' ★ATM':'';
+    const val=`${c.strike}|${mid.toFixed(2)}|${iv}|${c.lastPrice||mid}`;
+    return `<option value="${val}">K=${c.strike}  Bid=${c.bid||0}  Ask=${c.ask||0}  Mid=${mid.toFixed(2)}  IV=${iv}%  OI=${oi}${atm}</option>`;
+  }).join('');
+
+  // 自動選 ATM
+  const atmIdx=contracts.findIndex(c=>c.strike>=spot);
+  stSel.selectedIndex=Math.max(0,atmIdx>0?atmIdx-1:0);
+  optChainApply(stSel.value);
+
+  if(hint)hint.innerHTML=`<span style="color:var(--g)">✓ ${contracts.length} 個 ${type.toUpperCase()} · 現價 ${fmt(spot)} · 到期 ${_optDraft.expiry}</span>`;
+}
+
+// ── 選中履約價 → 寫入 _optDraft 和 UI
+function optChainApply(val){
+  if(!val||val==='')return;
+  const [s,m,iv,l]=val.split('|');
+  const strike=parseFloat(s), mid=parseFloat(m), ivv=parseFloat(iv), last=parseFloat(l);
+  _optDraft.strike=strike;
+  _optDraft.avg=mid>0?mid:last;
+  _optDraft.iv=ivv>0?ivv:30;
+  // 更新顯示欄位
+  const aEl=document.getElementById('f-avg'); if(aEl)aEl.value=_optDraft.avg.toFixed(2);
+  const iEl=document.getElementById('f-iv');  if(iEl)iEl.value=_optDraft.iv.toFixed(1);
+}
+
+// ── BS fallback：proxy 全失敗時顯示手動輸入
+function renderBSMode(sym){
+  const area=document.getElementById('chain-area');
+  const hint=document.getElementById('optHint');
+  const px=getPrice(sym)||0;
+  const defaultStrike=px?Math.round(px*2)/2:0;
+  // 預設到期日：最近的下個月第三個週五
+  const nextExp=nextThirdFriday();
+
+  area.innerHTML=`
+    <div style="background:rgba(176,122,0,.06);border:1px solid rgba(176,122,0,.25);border-radius:3px;padding:8px 10px;font-size:10px;color:var(--a);margin-bottom:8px">
+      ⚠ 無法取得即時選擇權鏈（網路限制）。請手動填入，系統使用 Black-Scholes 估算理論價格。
+    </div>
+    <div class="fgrid">
+      <div class="fg"><label>履約價 Strike</label>
+        <input id="f-strike-manual" type="number" step="0.5" value="${defaultStrike}"
+          oninput="_optDraft.strike=parseFloat(this.value); bsAutoCalc()">
+      </div>
+      <div class="fg"><label>到期日</label>
+        <input id="f-expiry-manual" type="date" value="${nextExp}"
+          oninput="_optDraft.expiry=this.value; bsAutoCalc()">
+      </div>
+    </div>`;
+  // 初始化 draft
+  _optDraft.strike=defaultStrike;
+  _optDraft.expiry=nextExp;
+  if(hint)hint.innerHTML=`<span style="color:var(--t2)">手動模式 · 現價 ${fmt(px)} · BS 將自動估算均價</span>`;
+  bsAutoCalc();
+}
+
+// 計算下個月的第三個週五
+function nextThirdFriday(){
+  const now=new Date();
+  // 往後找最近 30~75 天的第三週五
+  for(let d=21;d<=75;d++){
+    const dt=new Date(now.getTime()+d*86400000);
+    if(dt.getDay()===5){
+      // check if it's 3rd friday of its month
+      const day=dt.getDate();
+      if(day>=15&&day<=21) return dt.toISOString().slice(0,10);
+    }
+  }
+  // fallback: 30天後
+  return new Date(now.getTime()+30*86400000).toISOString().slice(0,10);
+}
+
+// BS 自動重算並填入均價
+function bsAutoCalc(){
+  const sym=document.getElementById('f-sym')?.value;
+  const px=getPrice(sym); if(!px)return;
+  const strike=_optDraft.strike||px;
+  const expiry=_optDraft.expiry; if(!expiry)return;
+  const iv=(_optDraft.iv||30)/100;
+  const type=document.getElementById('f-type')?.value||'call';
+  const T=Math.max(.002,(new Date(expiry)-Date.now())/(365*86400000));
+  const r=.05,sig=iv;
+  const d1=(Math.log(px/strike)+(r+.5*sig*sig)*T)/(sig*Math.sqrt(T)),d2=d1-sig*Math.sqrt(T);
+  let bs;
+  if(type==='call')bs=Math.max(0,px*Φ(d1)-strike*Math.exp(-r*T)*Φ(d2));
+  else bs=Math.max(0,strike*Math.exp(-r*T)*Φ(-d2)-px*Φ(-d1));
+  _optDraft.avg=parseFloat(bs.toFixed(2));
+  const aEl=document.getElementById('f-avg'); if(aEl)aEl.value=_optDraft.avg.toFixed(2);
+  const hint=document.getElementById('optHint');
+  if(hint)hint.innerHTML=`<span style="color:var(--cy)">BS 理論價: ${fmt(bs)} · 現價 ${fmt(px)} · K=${strike} · T=${Math.round(T*365)}天 · IV=${(_optDraft.iv||30)}%</span>`;
+}
+
+function closeModal(){document.getElementById('overlay').classList.remove('on');}
+
+function saveModal(){
+  const G=id=>document.getElementById(id);
+  const sym=(G('f-sym')?.value||'').trim();
+  const dir=G('f-dir')?.value;
+  const qty=parseInt(G('f-qty')?.value);
+
+  // 收盤硬阻擋
+  const isTW=sym.endsWith('.TW');
+  const isOpen=isTW?marketState.twse:marketState.nyse;
+  if(!isOpen){
+    alert(`🚫 ${isTW?'TWSE（台灣 09:00-13:30）':'NYSE（美東 09:30-16:00）'} 目前收盤，無法建倉。`);
+    return;
+  }
+
+  if(mMode==='option'){
+    const type=G('f-type')?.value;
+
+    // 整合兩種模式的值：chain 模式用 _optDraft，BS 模式同時也更新 _optDraft
+    // 但均價讓用戶可以手動覆蓋，以 f-avg 的值優先
+    const avgInput=parseFloat(G('f-avg')?.value);
+    const avg=isNaN(avgInput)?_optDraft.avg:avgInput;
+    const iv=parseFloat(G('f-iv')?.value)||_optDraft.iv||30;
+
+    // strike：chain 模式用 _optDraft，BS 模式讀 f-strike-manual
+    const strikeManual=parseFloat(G('f-strike-manual')?.value);
+    const strike=_optDraft.strike||(isNaN(strikeManual)?null:strikeManual);
+
+    // expiry：chain 模式用 _optDraft，BS 模式讀 f-expiry-manual
+    const expiryManual=G('f-expiry-manual')?.value;
+    const expiry=_optDraft.expiry||expiryManual;
+
+    // 驗證
+    if(!sym){alert('請選擇標的');return;}
+    if(!expiry){alert('請選擇或填入到期日');return;}
+    if(!strike||isNaN(strike)){alert('請選擇或填入履約價');return;}
+    if(isNaN(qty)||qty<=0){alert('請填入口數');return;}
+    if(!avg||isNaN(avg)){alert('請填入均價（或等待 BS 自動計算）');return;}
+
+    const newOpt={und:sym,type,dir,strike,expiry,qty,avgPx:avg,iv};
+    options_p.push(newOpt);
+    logTrade({sym,type:'option',action:'開倉',dir,qty,entryPx:avg,optType:type,strike,expiry,ccy:symCcy(sym)});
+    saveAll(); renderOptions();
+    apiAddOption(newOpt);
+  }else{
+    const avg=parseFloat(G('f-avg')?.value);
+    if(!sym||isNaN(qty)||isNaN(avg)){alert('請填寫所有欄位');return;}
+    const newPos={sym,dir,qty,avg};
+    positions.push(newPos);
+    logTrade({sym,type:'stock',action:'開倉',dir,qty,entryPx:avg,ccy:symCcy(sym)});
+    saveAll(); renderPositions();
+    apiAddPosition(newPos);
+  }
+  closeModal(); updateBook(); renderRisk();
+}
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function go(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('page-'+name).classList.add('on');
+  if(name==='risk')setTimeout(renderRisk,40);
+  if(name==='hist')renderHistory();
+  if(name==='strat'){
+    // Page is now visible — canvas clientWidth is valid, redraw everything
+    setTimeout(()=>{
+      _stratInited=true;
+      onStSym();
+    },30);
+  }
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+initCards();
+tick(); setInterval(tick,1000);
+loadFromAPI(); // Load persisted state from API
+updateCardClosedState();
+
+// 啟動時抓匯率，之後每 30 秒更新一次（Yahoo Finance 即時外匯）
+fetchFXRate();
+setInterval(fetchFXRate, 30*1000);
+
+// WS for US real-time (即時 push)
+connectWS();
+
+// TW meta（昨收、52W）初始載入
+initTWMeta();
+
+// ── 交錯輪詢：每個 symbol 輪流，間隔 500ms
+// 10個 symbol × 500ms = 每個 symbol 每 5s 更新一次
+// Finnhub free 限制 60 req/min，7 US × 每 5s = 84 req/min 稍超
+// 所以 US 和 TW 分開速率：US 每 5s，TW 每 3s（Stooq 無限制）
+let _usIdx = 0, _twIdx = 0;
+
+// 每個 US symbol 各自獨立每 5s 更新，全部並行跑
+// 不等前一個回來，真正做到 5s 週期
+US_SYMS.forEach((sym, i) => {
+  // 啟動時錯開 500ms，避免同時打出 7 個 request
+  setTimeout(() => {
+    setInterval(async () => {
+      await refreshSym(sym);
+    }, 5000);
+    refreshSym(sym); // 立刻打第一次
+  }, i * 500);
+});
+
+// 每個 TW symbol 各自獨立每 3s 更新
+TW_SYMS.forEach((sym, i) => {
+  setTimeout(() => {
+    setInterval(async () => {
+      await refreshSym(sym);
+    }, 3000);
+    refreshSym(sym);
+  }, i * 300);
+});
+
+renderHistory();
+updateBook();
+
+// ═══ EMBEDDED MARKET DATA ═══
+const MARKET_DATA={"hp":{"NVDA":{"p":[97.64,96.3,114.33,107.57,110.93,110.71,112.2,104.49,101.49,96.91,98.89,102.71,106.43,111.01,108.73,109.02,108.92,111.61,114.5,113.82,113.54,117.06,117.37,116.65,123.0,129.93,135.34,134.83,135.4,135.57,134.38,131.8,132.83,131.29,135.5,134.81,139.19,135.13,137.38,141.22,141.92,139.99,141.72,142.63,143.96,142.83,145.0,141.97,144.69,144.12,145.48,143.85,144.17,147.9,154.31,155.02,157.75,157.99,153.3,157.25,159.34,158.24,160.0,162.88,164.1,164.92,164.07,170.7,171.37,173.0,172.41,171.38,167.03,170.78,173.74,173.5,176.75,175.51,179.27,177.87,173.72,180.0,178.26,179.42,180.77,182.7,182.06,183.16,181.59,182.02,180.45,182.01,175.64,175.4,174.98,177.99,179.81,181.77,181.6,180.17,174.18,170.78,170.62,171.66,167.02,168.31,170.76,177.33,177.17,177.82,177.75,174.88,170.29,176.24,176.67,183.61,178.43,176.97,177.69,178.19,181.85,186.58,187.24,188.89,187.62,185.54,185.04,189.11,192.57,183.16,188.32,180.03,179.83,181.81,183.22,182.64,181.16,180.28,182.16,186.26,191.49,201.03,207.04,202.89,202.49,206.88,198.69,195.21,188.08,188.15,199.05,193.16,193.8,186.86,190.17,186.6,181.36,186.52,180.64,178.88,182.55,177.82,180.26,177.0,179.92,181.46,179.59,183.38,182.41,185.55,184.97,183.78,180.93,175.02,176.29,177.72,170.94,174.14,180.99,183.69,189.21,188.61,190.53,188.22,187.54,186.5,188.85,188.12,187.24,189.11,185.04,184.86,184.94,185.81,183.14,187.05,186.23,178.07,183.32,184.84,187.67,186.47,188.52,191.52,192.51,191.13,185.61,180.34,174.19,171.88,185.41,190.04,188.54,190.05,186.94,182.81,184.97,187.98,187.9,189.82,191.55,192.85,195.56,184.89,177.19,182.48,180.05,183.04,183.34,177.82,182.65,184.77,186.03,183.14,180.25,183.22,181.93,180.4,178.56,172.7,175.64,175.2,178.68,171.24,167.52,165.17,174.4,175.75,177.39,177.64,178.1,182.08],"d":["2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08"],"hv":[60.7,58.2,83.0,82.9,83.5,81.6,81.5,84.3,84.7,86.1,86.4,86.7,87.6,86.4,86.4,86.2,86.1,86.3,86.8,82.1,77.7,77.5,77.4,49.6,48.5,51.0,52.9,52.7,46.6,45.5,42.7,42.6,40.7,39.0,37.7,37.1,38.7,40.0,39.5,39.7,39.7,40.0,38.8,38.8,38.9,34.4,29.1,26.5,27.3,27.3,27.5,27.6,26.8,28.1,31.4,29.5,30.1,28.0,28.0,28.8,27.6,27.6,27.5,27.8,27.9,27.7,27.7,30.4,29.6,29.0,29.0,28.9,30.0,30.9,30.2,26.4,27.2,26.6,27.6,25.7,25.5,27.9,28.0,27.8,27.3,27.4,27.4,27.4,23.9,23.9,23.8,24.0,26.9,25.4,24.2,24.2,24.4,23.9,23.8,22.8,25.4,25.0,21.8,21.7,23.5,23.6,23.8,27.1,27.0,26.9,26.9,27.3,28.7,28.5,28.5,31.5,32.4,32.4,32.2,32.2,32.9,32.0,31.2,31.4,31.4,30.2,30.1,30.6,28.4,33.3,34.6,38.0,37.5,36.6,34.7,34.7,32.2,30.6,30.7,31.6,33.0,36.4,36.8,37.4,37.3,37.9,40.3,40.7,42.0,41.6,42.5,42.7,39.8,41.7,42.0,42.4,43.5,44.5,45.8,45.8,45.7,45.6,42.7,41.9,41.7,41.8,41.3,39.5,39.1,37.4,37.4,31.9,30.7,32.8,30.3,29.8,32.1,31.2,32.5,31.0,32.5,31.7,30.6,30.5,29.9,29.4,29.6,29.4,28.5,28.7,29.0,29.0,28.9,28.5,26.5,27.4,27.3,28.4,29.4,26.3,26.4,24.4,24.7,25.0,24.7,24.8,26.7,28.2,30.6,30.9,40.4,40.6,40.7,40.8,41.2,41.6,41.2,41.5,38.5,37.3,37.3,37.0,37.3,41.9,44.1,45.2,45.4,44.6,43.4,43.1,43.8,35.3,34.3,34.7,35.0,35.0,34.2,34.1,33.8,35.7,36.0,35.9,36.5,39.0,34.7,31.8,35.5,35.3,35.0,35.0,33.4,33.0]},"AMD":{"p":[83.64,78.21,96.84,88.7,93.4,94.5,95.29,88.29,87.5,85.56,86.26,90.39,94.47,96.64,96.39,96.06,97.35,96.65,98.8,100.59,98.62,100.36,101.7,102.84,108.12,112.46,117.72,114.99,117.17,114.74,113.51,112.06,110.71,110.31,114.56,112.86,113.03,110.73,114.63,117.31,118.58,115.69,116.19,121.73,123.24,121.14,118.5,116.16,126.39,127.1,126.79,128.24,129.58,138.43,143.4,143.68,143.81,141.9,136.11,138.52,137.91,134.8,137.82,138.41,144.16,146.42,146.24,155.61,160.08,160.41,156.99,157.0,154.72,158.65,162.12,166.47,173.66,177.44,179.51,176.31,171.7,176.78,174.31,163.12,172.4,172.76,172.28,174.95,184.42,180.95,177.51,176.14,166.55,165.2,163.71,167.76,163.36,166.62,167.13,168.58,162.63,162.32,162.13,161.79,151.14,151.41,155.82,159.54,155.67,158.57,161.16,160.46,159.16,157.92,157.39,159.79,160.9,160.88,161.27,159.46,161.36,161.79,164.01,169.73,164.67,203.71,211.51,235.56,232.89,214.9,216.42,218.09,238.6,234.56,233.08,240.56,238.03,230.23,234.99,252.92,259.67,258.01,264.33,254.84,256.12,259.65,250.05,256.33,237.7,233.54,243.98,237.52,258.89,247.96,246.81,240.52,230.29,223.55,206.02,203.78,215.05,206.13,214.24,217.53,219.76,215.24,217.6,215.98,217.97,221.11,221.62,221.42,221.43,210.78,207.58,209.17,198.11,201.06,213.43,214.95,214.9,215.04,214.99,215.61,215.34,214.16,223.47,221.08,214.35,210.02,204.68,203.17,207.69,220.97,223.6,227.92,231.83,231.92,249.8,253.73,259.68,251.31,252.03,252.74,252.18,236.73,246.27,242.11,200.19,192.5,208.44,216.0,213.57,213.58,205.94,207.32,203.08,200.12,203.37,200.15,196.6,213.84,210.86,203.68,200.21,198.62,190.95,202.07,199.45,192.43,202.68,203.23,204.83,197.74,193.39,196.58,196.31,199.46,205.27,201.33,202.68,205.37,220.27,203.77,201.99,196.04,203.43,210.21,217.5,220.18,221.53,231.82],"d":["2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08"],"hv":[62.5,65.4,98.8,102.4,103.5,103.1,102.4,105.7,105.4,105.6,105.6,104.3,105.4,104.7,104.1,103.5,103.6,103.6,103.9,98.9,94.2,94.0,91.2,53.4,47.2,45.7,48.2,48.8,41.6,42.1,41.5,41.7,38.6,35.5,37.0,37.4,37.3,37.7,39.5,39.6,39.3,39.6,39.2,42.1,42.1,38.9,37.2,34.4,44.4,43.9,43.3,43.4,43.3,48.8,50.3,48.5,48.3,48.5,50.1,49.0,48.4,48.9,48.7,48.7,48.1,48.2,47.8,51.9,52.4,43.4,44.0,44.0,44.1,44.8,39.3,38.4,41.1,41.8,41.7,39.7,40.3,41.5,41.0,46.4,50.2,48.1,47.8,48.1,46.8,46.2,46.7,46.2,50.1,49.9,49.2,49.4,49.4,47.7,47.1,47.0,48.2,47.4,46.3,46.0,46.3,42.2,43.3,44.1,44.6,41.2,41.0,40.5,40.5,35.7,35.6,35.8,34.9,33.7,33.0,33.2,33.3,30.9,31.2,33.4,35.0,78.1,79.2,87.0,86.7,90.6,90.4,90.3,95.5,95.7,95.6,96.3,96.2,96.8,97.1,100.4,100.7,100.7,101.0,101.7,101.0,100.6,69.7,69.0,63.6,63.8,59.4,60.1,67.0,61.2,60.9,61.5,62.4,63.1,68.2,68.0,65.7,66.7,68.0,67.7,66.6,66.9,66.9,65.6,65.2,59.9,59.6,57.6,56.9,51.3,49.4,49.4,52.1,50.2,53.3,45.2,45.1,41.0,38.3,35.9,35.5,35.4,37.7,37.7,39.1,39.6,40.3,40.3,41.1,46.3,43.3,43.4,43.8,39.5,46.9,42.4,43.1,44.6,44.6,44.6,44.6,49.7,51.5,49.7,82.4,82.8,87.0,87.4,87.5,87.1,85.4,85.3,85.4,85.3,85.5,81.7,81.8,86.4,85.8,86.7,86.9,86.9,85.2,86.3,86.3,57.1,58.3,51.4,49.9,51.2,51.8,50.6,50.5,50.3,51.0,51.2,50.9,50.8,48.1,55.0,53.7,54.4,55.8,55.3,53.0,53.0,51.6,50.8]},"TSLA":{"p":[233.29,221.86,272.2,252.4,252.31,252.35,254.11,241.55,241.37,227.5,237.97,250.74,259.51,284.95,285.88,292.03,282.16,280.52,287.21,280.26,275.35,276.22,284.82,298.26,318.38,334.07,347.68,342.82,349.98,342.09,343.82,334.62,341.04,339.34,362.89,356.9,358.43,346.46,342.69,344.27,332.05,284.7,295.14,308.58,326.09,326.43,319.11,325.31,329.13,316.35,322.05,322.16,348.68,340.47,327.55,325.78,323.63,317.66,300.71,315.65,315.35,293.94,297.81,295.88,309.87,313.51,316.9,310.78,321.67,319.41,329.65,328.49,332.11,332.56,305.3,316.06,325.59,321.2,319.04,308.27,302.63,309.26,308.72,319.91,322.27,329.65,339.03,340.84,339.38,335.58,330.56,335.16,329.31,323.9,320.11,340.01,346.6,351.67,349.6,345.98,333.87,329.36,334.09,338.53,350.84,346.4,346.97,347.79,368.81,395.94,410.04,421.62,425.86,416.85,426.07,434.21,425.85,442.79,423.39,440.4,443.21,444.72,459.46,436.0,429.83,453.25,433.09,438.69,435.54,413.49,435.9,429.24,435.15,428.75,439.31,447.43,442.6,438.97,448.98,433.72,452.42,460.55,461.51,440.1,456.56,468.37,444.26,462.07,445.91,429.52,445.23,439.62,430.6,401.99,404.35,408.92,401.25,403.99,395.23,391.09,417.78,419.4,426.58,430.17,430.14,429.24,446.74,454.53,455.0,439.58,445.17,451.45,446.89,458.96,475.31,489.88,467.26,483.37,481.2,488.73,485.56,485.4,475.19,459.64,454.43,449.72,438.07,451.67,432.96,431.41,435.8,445.01,448.96,447.2,439.2,438.57,437.5,419.25,431.44,449.36,449.06,435.2,430.9,431.46,416.56,430.41,421.81,421.96,406.01,397.21,411.11,417.32,425.21,428.27,417.07,417.44,410.63,411.32,411.71,411.82,399.83,409.38,417.4,408.58,402.51,403.32,392.43,405.94,405.55,396.73,398.68,399.24,407.82,395.01,391.2,395.56,399.27,392.78,380.3,367.96,380.85,383.03,385.95,372.11,361.83,355.28,371.75,381.26,360.59,352.82,346.65,343.25],"d":["2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08"],"hv":[101.6,85.2,110.0,110.2,109.7,108.9,107.6,107.4,106.2,108.1,107.8,102.1,102.1,105.2,105.2,104.8,105.3,104.6,103.4,101.9,94.7,94.2,93.2,62.7,61.3,63.5,65.0,65.1,63.1,63.6,60.2,59.0,56.5,55.2,50.4,50.7,50.2,50.2,50.3,49.7,50.5,73.2,74.2,75.0,75.8,72.3,70.8,69.8,69.7,70.7,70.5,70.5,75.1,75.2,76.4,72.8,72.6,72.9,74.4,76.2,76.1,79.0,58.4,57.1,57.3,54.2,54.3,54.1,55.0,54.9,54.3,54.0,54.1,46.6,54.6,54.3,55.2,55.4,55.1,53.0,50.7,51.3,45.1,46.6,46.6,44.4,45.3,45.2,44.7,43.3,43.5,42.4,42.8,43.0,43.2,37.8,36.4,35.3,35.0,35.1,35.3,35.0,34.6,34.9,34.9,35.1,34.2,32.8,38.5,45.7,47.1,47.8,47.7,47.9,48.1,48.4,44.2,45.7,48.0,49.9,49.8,48.2,49.3,52.3,52.4,54.1,56.2,56.3,56.4,55.6,53.1,52.0,51.3,51.4,51.6,51.4,51.1,50.8,49.6,48.6,48.9,49.2,49.2,50.6,48.9,49.5,49.5,48.8,50.2,51.7,50.1,46.8,47.1,52.6,52.3,51.8,51.8,51.7,52.2,51.8,55.3,53.4,53.3,53.4,50.8,49.2,50.3,47.3,45.3,45.2,43.5,41.9,41.8,42.2,36.9,38.3,41.5,42.6,42.6,42.3,42.2,35.4,36.2,37.5,37.6,37.8,38.8,37.8,40.1,40.1,38.4,38.9,38.7,38.6,38.0,36.0,34.4,33.7,33.1,35.9,35.5,37.1,37.3,36.5,36.7,38.2,38.7,37.6,38.5,36.4,38.3,38.5,38.3,38.3,39.3,38.8,39.3,39.3,36.4,35.0,33.6,34.6,33.5,34.2,34.6,32.3,31.7,33.1,33.1,31.2,30.4,27.9,28.4,29.8,29.9,28.7,28.9,28.9,31.0,33.0,35.1,33.6,32.7,34.4,35.0,35.2,38.5,38.3,41.3,42.0,41.7,41.8]},"ADBE":{"p":[340.7,340.0,364.64,350.05,352.47,350.91,350.38,344.19,348.8,343.22,349.91,351.96,360.91,367.72,368.62,370.98,374.98,374.63,380.87,381.06,382.98,384.97,383.99,383.28,395.94,397.4,399.47,404.69,417.12,420.68,417.61,414.03,414.33,407.69,413.1,412.23,413.36,415.09,403.4,412.49,413.91,415.2,416.92,416.26,416.06,412.84,413.68,391.68,401.73,382.68,378.04,376.92,380.12,382.34,387.55,384.95,385.83,386.88,392.1,378.47,379.31,376.93,382.24,373.38,371.43,363.35,366.99,364.18,361.77,366.45,365.79,367.68,372.87,372.46,371.69,370.74,369.47,370.7,364.0,357.69,347.8,338.85,338.74,345.62,338.27,341.05,333.65,338.43,351.07,348.58,354.85,357.24,361.03,353.43,353.43,362.09,363.21,354.91,356.35,353.96,356.7,345.63,348.5,344.31,348.97,358.66,354.06,350.16,350.55,349.36,347.1,352.73,362.07,367.46,365.9,364.08,361.78,353.27,354.16,360.37,359.42,352.75,343.72,351.48,346.74,350.14,348.31,348.77,347.47,337.51,339.32,335.94,330.63,329.23,333.26,343.4,357.55,354.09,354.12,353.52,357.8,359.91,337.86,339.24,340.31,337.47,335.35,335.53,327.35,326.95,328.85,333.22,337.05,333.6,331.11,325.07,324.47,318.11,312.4,324.19,318.73,319.55,317.52,320.13,322.85,322.81,326.78,328.73,346.26,339.12,344.32,343.13,350.43,356.43,351.15,347.89,354.66,355.81,355.86,357.53,352.42,352.98,353.8,353.16,352.51,349.99,333.3,331.56,335.99,338.1,339.04,333.95,327.65,309.93,304.44,304.09,296.12,290.37,294.23,299.73,301.07,304.72,297.42,299.58,291.65,293.25,293.38,271.93,279.71,269.39,268.38,266.9,264.67,257.16,262.5,263.97,260.45,263.17,259.21,258.61,246.68,255.17,257.81,259.04,262.41,260.88,270.99,273.12,281.74,283.62,282.44,275.13,273.7,269.78,249.32,251.86,254.2,246.0,245.99,248.15,247.64,238.87,237.25,240.88,234.84,241.13,243.08,241.37,242.92,244.35,240.14,239.31],"d":["2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08"],"hv":[63.4,62.4,66.9,68.3,44.7,42.1,41.9,41.8,42.0,42.3,42.8,42.3,42.5,42.7,42.7,41.7,41.8,41.8,42.1,38.5,34.3,33.3,33.3,22.9,21.3,21.2,21.2,21.6,23.2,23.0,22.4,21.6,21.5,20.5,19.9,19.9,19.8,19.5,21.9,22.5,22.5,22.5,22.5,22.5,22.4,19.6,19.6,27.2,28.2,31.1,31.3,31.2,31.2,31.2,31.1,30.8,30.8,30.8,31.2,32.0,31.1,31.1,31.5,32.5,32.5,33.4,33.5,33.6,27.8,26.8,20.8,20.5,21.0,20.8,20.7,20.2,20.1,20.1,21.1,21.4,20.1,22.0,21.9,22.4,22.2,22.3,22.3,22.6,25.8,25.8,26.1,26.2,26.4,27.0,27.0,28.3,28.3,29.4,29.4,28.8,28.3,28.7,27.4,27.7,27.2,27.8,28.1,27.3,26.8,23.7,23.7,23.5,25.1,25.3,24.3,24.3,23.0,24.4,23.0,23.8,23.7,24.4,23.6,24.7,24.8,24.5,22.7,22.3,22.0,24.2,24.2,24.4,24.3,22.6,22.5,24.7,28.3,28.4,27.2,27.2,26.9,26.9,34.1,32.9,32.0,31.8,31.7,31.7,32.8,32.8,31.2,31.5,31.6,31.3,31.4,31.7,30.0,27.4,27.9,30.7,31.3,31.0,31.0,22.1,22.3,22.3,22.5,22.5,28.8,28.4,28.9,28.9,29.4,29.7,30.0,30.0,30.1,30.1,29.3,28.7,26.1,25.5,25.5,25.4,25.2,25.2,30.3,30.1,30.4,24.6,23.5,23.5,24.4,30.2,30.3,29.8,31.0,31.1,31.4,32.0,32.0,31.9,33.0,33.1,34.3,34.4,34.3,39.8,40.9,42.7,42.7,42.7,42.5,43.1,39.2,38.8,39.1,38.1,37.9,37.6,40.5,42.1,42.1,41.3,41.4,40.4,42.5,42.6,35.2,33.9,31.3,32.6,32.6,32.8,41.5,41.0,41.1,42.4,42.3,42.0,42.0,40.7,39.0,39.2,40.2,41.0,41.0,38.9,38.9,37.4,37.8,37.8]},"AVGO":{"p":[154.14,156.03,185.15,172.3,181.94,178.36,178.95,174.61,170.99,166.21,169.58,176.91,188.15,192.31,192.47,191.17,192.47,197.33,203.64,200.72,200.09,204.81,207.77,208.2,221.58,232.42,232.12,232.64,228.61,230.63,231.68,229.73,230.53,228.72,235.65,239.43,241.97,242.07,248.71,256.85,261.08,259.93,246.93,244.28,244.63,252.91,256.07,248.7,252.1,249.37,251.26,249.99,253.77,263.77,264.65,270.17,269.35,275.65,264.74,269.9,275.18,274.18,271.8,277.9,275.4,274.38,275.6,280.94,280.81,286.45,283.34,288.21,278.59,283.69,288.71,290.18,294.3,297.42,302.62,293.7,288.64,297.72,292.93,301.67,303.76,304.97,303.9,312.83,309.09,311.23,306.34,305.76,294.91,291.17,289.6,294.0,294.23,298.01,300.25,308.65,297.39,298.24,302.39,306.1,334.89,345.65,336.67,369.57,359.63,359.87,364.09,360.0,346.17,345.35,344.94,338.79,338.94,339.31,336.1,334.53,327.9,329.91,333.39,338.18,338.37,335.49,336.41,345.5,345.02,324.63,356.7,344.13,351.33,354.15,349.33,349.24,342.66,340.3,344.29,354.13,362.05,372.97,385.98,376.47,369.63,362.55,351.94,358.98,355.59,349.43,358.39,351.96,355.22,339.98,342.46,342.65,340.5,354.42,346.82,340.2,377.96,385.03,397.57,402.96,386.08,381.57,380.61,381.03,390.24,401.1,406.29,412.97,406.37,359.93,339.81,341.3,326.02,329.88,340.36,341.45,349.32,350.22,352.13,349.39,349.85,346.1,347.62,343.42,343.77,343.5,332.48,344.97,352.21,354.61,339.89,343.02,351.71,332.6,328.8,325.49,320.05,324.85,332.79,333.24,330.73,331.3,331.11,320.33,308.05,310.51,332.92,343.94,340.44,342.76,331.17,325.17,332.54,333.51,333.99,332.65,330.34,325.49,332.31,321.7,319.55,318.82,313.84,317.53,332.77,330.48,345.75,342.58,341.57,335.97,322.16,324.92,321.31,315.93,319.84,310.51,322.51,318.29,318.81,309.42,300.68,293.41,309.51,313.49,314.55,314.43,333.97,350.63],"d":["2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08"],"hv":[61.0,58.1,82.3,85.7,87.6,87.5,87.5,87.3,86.7,86.8,87.1,88.3,90.7,89.4,88.2,88.1,88.0,88.4,88.8,80.2,78.2,76.5,76.5,48.4,46.8,45.9,45.4,45.4,45.0,44.5,43.4,43.0,40.4,34.4,35.1,35.6,35.7,35.6,35.8,35.9,36.0,36.0,39.3,39.2,39.2,34.7,30.8,32.4,32.7,32.4,32.3,32.3,32.6,35.2,35.1,34.3,33.9,34.7,37.4,36.8,35.7,35.3,35.4,31.5,31.5,31.5,29.3,29.8,28.0,28.4,28.4,28.9,31.2,31.4,29.0,29.1,28.6,28.8,28.3,26.7,26.5,27.8,28.4,30.0,29.1,28.9,28.9,30.6,30.1,30.2,30.0,29.7,31.7,29.8,29.2,29.0,28.9,28.9,28.8,29.7,30.7,30.1,28.5,28.3,40.8,42.2,43.1,53.9,53.8,53.6,53.7,53.6,55.3,53.8,53.6,54.0,53.7,53.7,53.6,53.6,53.2,51.7,51.8,51.8,51.6,41.3,39.8,39.8,23.3,30.0,44.3,45.9,46.3,44.3,44.5,44.5,44.6,44.7,44.8,45.8,46.4,47.0,48.4,49.1,49.2,49.7,50.6,51.1,50.4,50.7,47.0,34.3,32.2,34.8,34.8,34.5,34.6,36.7,37.3,37.7,51.6,51.4,51.5,50.4,51.8,51.6,51.1,50.1,50.3,51.1,50.9,50.5,50.4,65.6,66.8,66.8,68.6,68.7,68.2,67.8,67.9,57.3,57.0,55.9,55.7,53.9,53.7,53.9,53.9,53.2,53.6,54.9,55.1,54.9,38.2,32.7,33.8,35.6,35.6,34.1,34.6,34.0,35.0,35.0,35.0,35.0,34.8,36.6,38.8,38.9,45.8,45.8,44.1,43.6,45.1,43.1,43.7,42.8,38.2,38.0,37.9,37.8,38.2,38.9,39.0,38.9,39.3,39.5,41.1,38.9,41.8,34.3,32.4,32.7,35.7,33.8,33.5,33.1,33.3,34.9,37.2,37.4,37.1,37.8,37.5,38.3,42.6,42.4,42.3,39.0,44.2,44.6]},"CAT":{"p":[280.06,273.94,301.01,289.16,293.45,298.12,293.43,290.14,294.25,284.74,291.17,295.77,306.86,306.45,307.06,307.4,309.27,313.96,323.68,323.11,320.89,320.29,324.25,325.62,342.55,352.54,349.66,349.81,353.58,352.57,349.49,342.51,345.19,343.39,351.51,349.49,351.79,348.03,344.67,349.4,349.33,348.96,353.35,358.07,358.57,363.14,360.96,357.05,362.44,357.68,359.8,360.52,366.23,373.02,371.58,381.88,384.71,388.21,390.92,398.43,397.86,391.51,394.29,402.18,408.33,405.92,405.77,404.64,412.88,418.07,413.71,410.07,417.19,427.59,429.52,433.75,432.94,430.05,434.12,438.02,428.69,433.7,434.23,427.72,417.12,416.52,408.54,412.71,413.7,417.5,407.79,412.64,416.09,420.59,417.89,435.67,432.3,431.26,432.67,434.91,419.04,416.05,415.12,420.22,423.08,422.78,418.09,422.91,431.38,431.52,435.94,440.67,450.66,466.96,466.54,472.1,471.26,469.79,463.72,465.76,471.61,477.15,480.82,490.57,497.85,495.38,486.71,502.12,500.36,491.3,504.76,527.47,534.05,540.96,527.08,531.18,524.65,513.91,520.5,522.73,527.07,524.47,585.49,583.15,577.26,570.59,547.58,569.15,569.78,563.1,570.85,567.93,573.02,553.55,554.03,552.05,546.88,553.11,546.13,550.43,559.6,566.61,573.73,575.76,568.06,582.47,591.49,599.15,603.17,596.5,594.36,615.35,625.61,597.89,589.76,588.93,561.89,565.83,576.22,582.41,582.42,583.76,583.0,578.61,577.39,572.87,598.41,616.1,623.09,596.52,608.13,617.62,629.77,636.53,638.75,647.18,646.89,629.0,645.38,648.41,626.62,635.92,638.91,643.28,665.24,657.36,690.91,702.89,691.82,678.31,726.2,742.12,742.37,775.0,758.29,774.2,764.76,751.97,760.53,759.74,756.47,768.23,766.61,752.93,742.83,752.32,722.18,731.97,706.08,680.9,704.82,716.68,707.59,700.69,693.99,699.78,702.0,693.62,688.65,680.88,701.7,716.63,719.04,703.19,695.4,667.43,708.46,730.32,717.22,721.24,724.44,771.58],"d":["2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08"],"hv":[42.9,43.3,54.0,55.7,55.7,55.6,55.8,55.6,55.8,56.9,57.4,57.3,58.7,58.7,58.7,57.8,57.9,58.1,58.9,49.9,45.5,44.4,44.0,29.5,31.4,32.5,32.2,31.7,31.7,31.3,29.4,29.2,28.8,25.9,27.1,27.2,27.3,27.4,27.2,25.5,25.4,25.3,25.7,25.8,25.7,19.3,16.7,16.8,17.6,17.8,17.9,17.7,17.1,18.1,18.0,18.7,18.7,18.9,18.7,19.5,18.9,19.7,19.9,20.6,20.7,20.8,20.4,20.3,21.1,20.9,20.7,20.9,21.7,22.7,21.8,22.0,19.9,19.9,19.9,20.0,20.3,20.7,19.9,20.4,21.1,20.5,21.4,21.7,21.7,20.8,21.9,22.0,22.0,21.5,19.8,24.5,24.4,24.4,24.3,24.2,27.2,26.3,26.0,26.3,25.9,24.4,24.7,24.1,24.8,24.8,24.9,23.8,24.7,27.4,27.2,27.4,23.3,23.1,23.6,23.6,23.9,20.6,20.6,21.7,21.9,21.8,22.7,24.8,24.5,24.4,26.1,30.0,30.1,29.4,28.2,28.3,28.4,29.2,29.6,29.2,29.3,29.1,47.8,47.7,47.3,47.2,49.3,50.7,49.6,49.7,49.5,48.7,46.3,47.7,47.5,46.6,46.7,46.6,46.3,46.1,46.5,46.6,46.8,27.1,27.5,28.6,28.8,25.4,21.7,22.1,21.7,24.4,25.0,29.3,27.2,27.2,31.7,31.6,32.0,31.9,31.8,31.3,31.0,30.8,30.8,30.5,32.9,34.0,34.0,37.1,37.5,37.9,36.5,36.3,32.7,32.7,32.7,30.0,31.2,30.6,32.6,33.0,33.0,33.1,35.0,35.2,39.1,36.5,35.6,36.0,40.3,40.5,40.1,42.3,42.8,43.3,43.3,43.7,42.8,41.9,41.9,40.5,40.2,40.6,40.8,39.4,41.7,38.2,39.7,41.3,42.5,35.8,35.2,35.4,32.3,31.5,30.7,30.7,30.2,30.2,32.0,32.8,32.4,33.3,32.9,35.5,40.9,39.8,40.0,38.0,35.9,40.3]},"DIS":{"p":[83.3,81.72,91.44,85.23,84.89,84.66,85.01,82.77,84.81,84.0,86.09,87.29,90.01,90.28,90.16,91.17,90.95,90.81,92.49,92.11,92.17,102.09,105.12,105.94,110.49,111.38,112.94,112.22,113.42,112.66,112.36,110.46,111.13,109.72,112.36,111.52,112.02,113.04,112.95,113.6,113.49,112.53,113.9,115.66,118.73,119.52,118.61,117.94,119.48,118.13,117.86,117.63,117.75,118.65,119.42,121.46,122.34,124.01,123.49,122.98,124.0,123.16,121.82,120.61,121.56,119.87,119.97,118.98,119.82,122.21,121.42,120.84,121.06,122.94,121.95,121.47,120.37,119.91,119.54,119.11,116.59,119.35,118.32,115.17,112.88,112.43,112.55,113.72,116.64,116.31,115.39,116.55,116.27,117.04,116.21,118.86,117.71,117.65,118.09,117.64,118.38,118.27,117.38,118.81,117.91,118.84,117.37,115.79,117.08,115.96,115.62,115.23,116.1,114.86,113.76,112.56,112.25,113.43,112.99,113.47,114.78,114.5,112.95,112.14,112.47,112.75,112.53,111.89,110.99,109.19,110.27,111.17,111.71,109.88,110.67,111.96,114.3,113.08,113.03,111.68,112.34,111.65,110.24,111.84,112.62,112.12,111.47,111.36,110.49,110.74,112.24,114.85,116.65,107.61,105.8,105.69,106.28,104.67,102.7,104.28,101.94,103.31,103.43,104.47,106.77,104.83,105.74,105.47,105.3,107.63,107.02,108.83,111.46,111.6,110.49,111.62,110.63,111.87,111.24,112.38,113.22,114.48,113.56,114.19,114.79,113.77,111.85,114.07,114.57,112.91,114.17,115.88,112.82,112.98,113.53,113.41,111.2,110.34,113.19,113.21,110.98,111.31,110.61,109.56,111.58,112.8,104.45,104.22,107.05,104.97,108.7,107.13,109.96,108.12,102.38,105.45,105.44,107.1,106.0,105.58,104.41,106.05,105.05,105.55,106.04,104.33,103.3,103.04,102.41,101.54,101.66,101.32,100.89,99.43,99.29,98.66,100.3,99.42,99.2,99.51,97.95,96.39,95.95,94.75,92.42,94.32,96.38,96.56,96.61,96.28,95.78,99.18],"d":["2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08"],"hv":[47.3,47.0,58.4,63.2,62.9,62.6,62.5,63.2,63.7,63.6,64.1,64.2,64.9,64.9,64.9,64.4,64.4,64.3,64.6,55.2,50.9,62.0,62.5,49.0,44.9,45.0,45.2,45.3,44.4,43.7,43.6,43.2,42.9,41.8,42.6,42.7,42.6,42.7,42.7,42.2,42.2,42.3,23.5,21.9,23.5,18.6,18.6,18.1,18.5,18.6,18.4,18.4,17.5,17.5,17.1,16.1,16.1,16.7,16.5,16.5,16.6,16.8,17.0,16.8,16.2,14.2,14.1,14.1,14.2,15.1,14.7,14.8,14.8,15.7,15.8,15.7,14.9,14.7,14.0,14.0,15.7,17.5,17.6,19.5,20.4,20.3,19.7,20.1,21.7,21.6,20.7,20.8,20.8,20.9,20.3,21.6,21.8,21.6,21.6,21.6,21.7,20.4,18.9,19.1,16.9,15.6,16.1,16.8,16.9,14.8,14.8,14.6,14.4,14.8,15.0,15.3,13.2,13.2,13.3,13.3,13.8,13.7,14.5,14.5,13.9,13.6,13.4,12.8,12.3,13.0,13.0,13.2,13.3,14.2,14.0,14.1,15.4,15.8,15.4,15.9,16.0,15.6,16.2,16.3,16.3,16.3,16.4,16.4,16.5,16.3,16.0,17.5,18.1,33.3,33.3,33.2,33.0,32.6,33.1,33.5,34.2,34.4,34.4,34.3,34.7,35.2,35.3,35.3,35.3,36.0,36.0,36.2,36.2,35.8,22.7,22.2,22.4,22.7,22.1,21.4,20.9,19.8,19.4,19.5,19.3,18.0,17.9,18.9,18.9,19.6,18.5,19.1,20.4,18.6,18.7,18.4,19.3,19.2,20.8,20.7,21.5,21.4,21.2,21.3,22.1,22.3,34.6,34.1,34.7,35.3,37.0,37.2,37.9,37.2,41.7,42.9,42.9,42.7,42.8,41.9,42.1,41.8,42.0,41.9,41.8,41.7,41.7,32.1,32.2,30.9,30.2,27.7,27.3,26.2,25.6,17.3,15.1,15.4,14.5,14.1,15.0,15.5,14.7,14.9,17.2,18.5,19.1,18.8,18.8,18.7,18.6,22.2]}},"omon":{"NVDA":{"2026-04-17":{"days":9,"fwd":181.95,"calls":[[177.5,6.75,6.9,6.67,33.84,4086],[180.0,5.0,5.1,5.05,31.96,23308],[182.5,3.5,3.55,3.52,30.28,12728],[185.0,2.26,2.31,2.29,28.73,26928],[187.5,1.35,1.39,1.37,27.49,10876]],"puts":[[177.5,1.98,2.02,2.0,32.78,4946],[180.0,2.71,2.75,2.77,31.05,41285],[182.5,3.65,3.75,3.65,29.36,6635],[185.0,4.9,5.05,4.96,27.86,5011],[187.5,6.5,6.6,6.76,26.3,340]]},"2026-05-15":{"days":37,"fwd":182.47,"calls":[[170.0,16.25,16.45,16.3,37.32,988],[175.0,12.6,12.75,12.49,35.52,9882],[180.0,9.35,9.45,9.41,33.78,13283],[185.0,6.55,6.7,6.55,32.22,8489],[190.0,4.35,4.45,4.3,30.83,9371]],"puts":[[170.0,3.45,3.55,3.52,36.45,4174],[175.0,4.75,4.85,4.9,34.69,4105],[180.0,6.5,6.6,6.5,33.2,8497],[185.0,8.7,8.85,8.93,31.76,1816],[190.0,11.5,11.65,11.76,30.31,2484]]},"2026-06-18":{"days":71,"fwd":183.1,"calls":[[180.0,14.0,14.2,14.05,38.6,4061],[181.0,13.4,13.65,13.47,38.37,283],[182.0,12.9,13.1,13.05,38.25,450],[183.0,12.35,12.55,12.3,38.01,245],[184.0,11.8,12.0,11.75,37.73,84]],"puts":[[180.0,10.55,10.7,10.65,37.93,5299],[181.0,10.95,11.3,11.25,37.94,210],[182.0,11.4,11.75,11.61,37.74,100],[183.0,11.85,12.2,12.2,37.5,77],[184.0,12.35,12.7,12.6,37.38,133]]},"2026-07-17":{"days":100,"fwd":183.64,"calls":[[170.0,22.35,22.8,22.1,40.23,313],[175.0,19.25,19.6,19.5,39.44,977],[180.0,16.3,16.55,16.32,38.39,1335],[185.0,13.6,13.9,13.67,37.54,761],[190.0,11.25,11.55,11.33,36.85,1295]],"puts":[[170.0,8.6,8.75,8.75,39.71,1094],[175.0,10.35,10.65,10.46,38.88,410],[180.0,12.35,12.75,12.45,38.04,710],[185.0,14.7,15.1,14.85,37.31,83],[190.0,17.3,17.75,17.4,36.58,181]]},"2026-08-21":{"days":135,"fwd":184.3,"calls":[[170.0,25.0,25.65,25.11,40.49,222],[175.0,22.05,22.55,22.3,39.86,177],[180.0,19.25,19.55,19.32,39.03,499],[185.0,16.6,17.05,16.95,38.46,479],[190.0,14.25,14.55,14.4,37.74,247]],"puts":[[170.0,10.75,10.95,10.94,40.02,354],[175.0,12.6,12.95,12.9,39.29,1991],[180.0,14.7,15.05,14.9,38.56,988],[185.0,17.05,17.45,17.4,37.94,47],[190.0,19.6,20.1,20.0,37.32,40]]},"2026-09-18":{"days":163,"fwd":184.82,"calls":[[170.0,27.45,27.95,27.7,41.71,629],[175.0,24.5,24.9,24.9,41.01,398],[180.0,21.75,22.1,21.8,40.41,957],[185.0,19.15,19.45,19.21,39.72,2120],[190.0,16.8,17.1,17.07,39.22,508]],"puts":[[170.0,12.45,12.85,12.65,40.89,192],[175.0,14.55,14.85,14.78,40.44,517],[180.0,16.6,17.0,16.9,39.67,1019],[185.0,19.05,19.35,19.45,39.13,1017],[190.0,21.7,22.1,21.75,38.78,639]]},"2026-10-16":{"days":191,"fwd":185.35,"calls":[[170.0,29.2,30.0,29.17,41.33,106],[175.0,26.4,26.85,26.05,40.64,41],[180.0,23.65,24.05,23.9,40.01,1110],[185.0,21.1,21.5,21.28,39.5,68],[190.0,18.8,19.15,18.9,39.08,237]],"puts":[[170.0,13.9,14.3,14.15,40.56,335],[175.0,15.95,16.3,16.18,40.01,187],[180.0,18.05,18.45,18.3,39.3,28],[185.0,20.5,20.9,20.95,38.88,42],[190.0,23.1,23.65,23.43,38.53,30]]},"2026-11-20":{"days":226,"fwd":186.01,"calls":[[170.0,31.8,32.7,31.88,42.4,5],[175.0,28.95,29.6,29.16,41.63,45],[180.0,26.4,26.85,26.55,41.19,210],[185.0,23.95,24.4,24.05,40.83,150],[190.0,21.65,22.05,21.85,40.42,66]],"puts":[[170.0,15.85,16.25,16.07,41.39,14],[175.0,18.05,18.35,18.2,41.0,86],[180.0,20.25,20.65,20.45,40.51,32],[185.0,22.65,23.1,22.88,40.03,44],[190.0,25.1,25.85,25.39,39.57,1]]},"2026-12-18":{"days":254,"fwd":186.54,"calls":[[180.0,28.1,28.6,28.26,41.36,287],[181.0,27.55,28.0,28.05,41.16,205],[182.0,27.05,27.5,27.27,41.08,52],[183.0,26.6,27.05,26.82,41.08,380],[184.0,26.1,26.5,26.25,40.93,28]],"puts":[[180.0,21.4,21.75,21.52,40.45,227],[181.0,21.85,22.3,22.27,40.41,248],[182.0,22.35,22.8,22.59,40.35,39],[183.0,22.7,23.5,22.37,40.32,1],[184.0,23.3,23.85,23.6,40.2,4]]},"2027-01-15":{"days":282,"fwd":187.06,"calls":[[170.0,35.05,35.5,35.29,42.25,136],[175.0,32.3,32.75,32.41,41.82,225],[180.0,29.9,30.1,29.9,41.53,3951],[185.0,27.25,27.7,27.45,41.03,243],[190.0,24.95,25.4,25.2,40.67,355]],"puts":[[170.0,18.0,18.35,18.25,41.25,1858],[175.0,20.15,20.5,20.41,40.82,281],[180.0,22.45,22.9,22.65,40.48,962],[185.0,25.0,25.35,25.13,40.15,1284],[190.0,27.55,28.05,28.0,39.78,44]]},"2027-03-19":{"days":345,"fwd":188.25,"calls":[[170.0,38.65,39.15,38.95,42.96,25],[175.0,35.95,36.5,36.19,42.55,102],[180.0,33.5,34.0,33.63,42.28,169],[185.0,31.15,31.6,31.4,41.97,112],[190.0,28.9,29.35,29.05,41.68,65]],"puts":[[170.0,20.5,20.9,20.82,41.79,34],[175.0,22.75,23.1,23.04,41.42,21],[180.0,25.1,25.6,25.25,41.16,733],[185.0,27.6,28.0,27.8,40.75,126],[190.0,30.25,30.85,30.55,40.59,62]]},"2027-06-17":{"days":435,"fwd":189.93,"calls":[[170.0,43.1,44.0,43.37,43.66,97],[175.0,40.65,41.35,40.8,43.35,61],[180.0,38.25,38.75,38.5,42.96,281],[185.0,35.95,36.5,35.75,42.74,67],[190.0,33.8,34.35,33.99,42.55,80]],"puts":[[170.0,23.6,24.05,23.8,42.29,91],[175.0,25.75,26.3,26.2,41.85,37],[180.0,28.3,28.75,28.56,41.66,50],[185.0,30.85,31.35,31.15,41.41,678],[190.0,33.5,34.15,36.4,41.21,0]]},"2027-09-17":{"days":527,"fwd":191.64,"calls":[[170.0,47.25,48.4,47.33,44.19,16],[175.0,44.9,45.8,45.22,43.89,6],[180.0,42.35,43.9,43.0,43.79,18],[185.0,39.8,41.7,40.6,43.39,11],[190.0,38.25,38.9,38.37,43.13,33]],"puts":[[170.0,26.2,26.85,26.55,42.55,2],[175.0,28.65,29.3,31.97,42.39,0],[180.0,31.1,31.7,30.99,42.08,25],[185.0,33.65,34.2,34.11,41.76,4],[190.0,36.35,37.3,39.21,41.77,0]]},"2027-12-17":{"days":618,"fwd":193.32,"calls":[[170.0,51.3,52.25,51.8,44.69,58],[175.0,49.0,49.75,49.23,44.41,33],[180.0,46.65,47.5,47.18,44.16,16],[185.0,44.55,45.25,44.65,43.95,71],[190.0,42.5,43.1,42.73,43.75,109]],"puts":[[170.0,28.75,29.35,28.9,42.91,22],[175.0,31.2,31.75,31.55,42.69,7],[180.0,33.7,34.3,33.91,42.47,1],[185.0,36.3,36.9,36.0,42.24,1],[190.0,39.0,39.85,39.55,42.14,2]]},"2028-01-21":{"days":653,"fwd":193.95,"calls":[[170.0,52.65,53.45,53.04,44.66,134],[175.0,50.35,51.4,50.53,44.63,92],[180.0,48.2,48.8,48.4,44.27,366],[185.0,45.95,46.8,46.27,44.1,39],[190.0,43.65,44.8,44.4,43.83,23]],"puts":[[170.0,29.25,30.15,29.86,42.72,50],[175.0,31.75,32.55,32.4,42.53,1618],[180.0,34.5,35.05,34.75,42.43,307],[185.0,37.1,37.6,37.5,42.16,39],[190.0,39.85,40.45,40.16,42.03,4]]}},"AMD":{"2026-05-15":{"days":37,"fwd":231.83,"calls":[[210.0,30.25,30.85,30.2,58.57,1013],[220.0,23.55,24.0,23.8,56.61,1575],[230.0,18.05,18.8,18.04,56.59,3137],[240.0,13.25,13.55,13.3,54.57,3330],[250.0,9.5,9.75,9.67,53.71,2526]],"puts":[[210.0,7.85,8.05,7.93,58.93,860],[220.0,11.1,11.35,11.35,57.23,1326],[230.0,14.9,15.6,15.55,55.02,551],[240.0,20.5,20.75,20.75,54.36,172],[250.0,25.85,27.1,27.0,52.16,170]]},"2026-06-18":{"days":71,"fwd":232.78,"calls":[[210.0,35.35,35.95,35.4,56.11,301],[220.0,29.4,29.8,29.55,55.43,724],[230.0,23.95,24.15,23.98,54.29,1254],[240.0,19.2,19.5,19.2,53.56,832],[250.0,15.2,15.5,15.26,52.9,1496]],"puts":[[210.0,12.1,12.3,12.21,56.35,587],[220.0,15.85,16.05,16.05,55.15,456],[230.0,20.3,20.55,20.8,54.17,274],[240.0,25.5,25.8,25.6,53.32,272],[250.0,30.55,31.85,31.96,51.58,101]]},"2026-07-17":{"days":100,"fwd":233.48,"calls":[[210.0,38.6,39.6,39.0,55.1,156],[220.0,33.2,33.85,33.05,55.07,384],[230.0,27.9,28.15,28.0,53.9,196],[240.0,23.25,23.5,23.25,53.3,185],[250.0,19.2,19.4,19.2,52.72,465]],"puts":[[210.0,15.0,15.25,15.19,55.46,212],[220.0,18.95,19.2,19.17,54.41,111],[230.0,23.55,23.8,24.13,53.59,124],[240.0,28.1,29.1,29.6,52.21,62],[250.0,34.3,35.15,35.7,52.1,46]]},"2026-08-21":{"days":135,"fwd":234.42,"calls":[[210.0,43.1,45.15,43.98,56.33,150],[220.0,37.95,39.15,38.1,55.79,121],[230.0,32.85,33.75,33.12,54.94,138],[240.0,28.4,29.0,28.52,54.4,71],[250.0,24.4,25.0,24.7,54.08,415]],"puts":[[210.0,18.95,19.75,19.5,56.64,108],[220.0,23.2,24.0,24.0,55.81,37],[230.0,28.1,28.8,28.34,55.28,68],[240.0,33.4,34.15,34.35,54.72,4],[250.0,38.7,41.0,39.22,54.62,49]]},"2026-09-18":{"days":163,"fwd":235.17,"calls":[[210.0,45.95,48.05,47.0,55.93,60],[220.0,41.0,42.7,41.18,55.95,267],[230.0,35.95,37.0,36.4,54.81,120],[240.0,31.55,32.2,30.9,54.25,74],[250.0,27.55,28.5,27.7,54.2,223]],"puts":[[210.0,21.4,21.75,21.69,56.17,197],[220.0,25.45,26.25,25.95,55.27,53],[230.0,30.35,31.3,30.25,54.89,23],[240.0,35.8,36.55,35.69,54.38,21],[250.0,41.35,42.65,41.6,53.92,37]]},"2026-10-16":{"days":191,"fwd":235.97,"calls":[[210.0,48.0,50.05,48.0,53.58,21],[220.0,43.2,44.65,43.85,53.58,8],[230.0,38.7,40.15,38.97,53.8,25],[240.0,34.45,35.3,34.75,53.31,37],[250.0,29.6,31.15,30.9,52.3,96]],"puts":[[210.0,23.05,23.7,24.11,54.43,18],[220.0,27.45,28.15,28.14,53.83,115],[230.0,32.45,33.6,33.65,53.79,14],[240.0,37.85,39.0,38.09,53.37,2],[250.0,43.3,45.0,52.8,52.81,0]]},"2026-11-20":{"days":226,"fwd":237.03,"calls":[[210.0,52.65,54.35,55.0,55.28,12],[220.0,47.5,48.65,47.28,54.55,4],[230.0,42.75,44.65,42.85,54.78,27],[240.0,38.55,39.5,38.91,54.05,40],[250.0,34.55,35.75,35.7,53.95,25]],"puts":[[210.0,26.35,27.15,26.15,55.7,46],[220.0,30.85,31.75,30.87,55.12,42],[230.0,35.8,36.9,36.7,54.71,17],[240.0,41.35,42.4,41.4,54.43,4],[250.0,47.05,48.35,48.05,54.05,1]]},"2026-12-18":{"days":254,"fwd":237.73,"calls":[[210.0,55.45,56.9,55.7,55.55,39],[220.0,50.1,51.95,51.1,55.09,141],[230.0,45.3,46.4,45.47,54.13,45],[240.0,41.3,42.3,41.32,54.22,72],[250.0,37.1,38.3,37.8,53.8,105]],"puts":[[210.0,28.15,28.85,28.45,55.4,7],[220.0,32.65,33.6,33.32,54.87,329],[230.0,37.95,38.5,38.15,54.49,505],[240.0,43.2,44.2,43.84,54.12,8],[250.0,49.1,50.1,50.1,53.86,32]]},"2027-01-15":{"days":282,"fwd":238.66,"calls":[[210.0,57.2,58.5,57.64,54.37,131],[220.0,52.5,54.3,53.0,54.8,190],[230.0,47.8,49.1,48.35,54.12,246],[240.0,43.55,44.7,44.1,53.82,84],[250.0,39.55,40.65,39.8,53.5,326]],"puts":[[210.0,29.75,30.55,30.02,55.24,15],[220.0,34.5,35.25,34.63,54.79,10],[230.0,39.4,40.5,40.22,54.35,48],[240.0,44.85,46.0,45.5,53.99,4],[250.0,50.75,51.95,51.57,53.77,70]]},"2027-03-19":{"days":345,"fwd":240.57,"calls":[[210.0,62.5,64.5,63.5,55.05,26],[220.0,57.75,59.95,57.9,55.0,217],[230.0,53.3,55.05,54.27,54.55,19],[240.0,49.15,51.0,49.2,54.43,12],[250.0,45.2,46.35,46.5,53.77,562]],"puts":[[210.0,33.55,34.4,33.4,55.46,10],[220.0,38.45,39.35,38.69,55.14,1281],[230.0,43.5,44.5,44.0,54.66,11],[240.0,49.1,50.55,49.35,54.67,3],[250.0,54.5,56.1,55.5,53.94,2]]},"2027-06-17":{"days":435,"fwd":242.85,"calls":[[210.0,69.4,71.45,70.5,55.71,51],[220.0,65.0,66.9,65.87,55.61,44],[230.0,60.75,61.8,61.3,55.0,13],[240.0,56.4,58.2,58.3,54.9,12],[250.0,52.9,54.55,53.5,54.94,140]],"puts":[[210.0,38.6,39.75,38.52,56.05,5],[220.0,43.55,44.8,43.9,55.67,9],[230.0,49.1,50.1,49.5,55.44,2],[240.0,54.7,55.65,64.05,55.1,0],[250.0,60.55,61.65,61.35,54.86,14]]},"2027-09-17":{"days":527,"fwd":245.37,"calls":[[210.0,75.8,78.55,78.15,56.47,13],[220.0,71.4,74.0,73.51,56.18,19],[230.0,67.1,69.85,68.75,55.91,57],[240.0,63.55,65.35,62.98,55.63,2],[250.0,59.8,61.3,58.29,55.27,1]],"puts":[[210.0,43.15,44.5,43.33,56.53,3],[220.0,48.25,49.7,48.65,56.2,2],[230.0,53.75,54.6,59.83,55.69,0],[240.0,58.5,60.8,60.1,55.21,1],[250.0,65.2,66.6,72.09,55.26,0]]},"2027-12-17":{"days":618,"fwd":248.25,"calls":[[210.0,81.75,84.4,82.63,56.6,14],[220.0,77.15,80.0,77.73,56.17,30],[230.0,72.5,75.95,73.72,55.7,3],[240.0,69.65,72.35,71.6,56.06,9],[250.0,65.95,68.15,68.0,55.61,18]],"puts":[[210.0,47.05,47.9,47.7,56.55,5],[220.0,52.45,53.7,53.38,56.57,3],[230.0,58.0,59.4,57.9,56.4,6],[240.0,63.8,65.6,64.28,56.37,6],[250.0,69.7,71.1,74.4,55.9,0]]},"2028-01-21":{"days":653,"fwd":248.97,"calls":[[210.0,83.4,86.35,83.65,56.56,52],[220.0,78.85,82.2,80.4,56.22,5],[230.0,75.55,78.1,77.28,56.3,90],[240.0,71.75,73.5,72.72,55.76,21],[250.0,67.8,69.55,68.4,55.29,41]],"puts":[[210.0,48.35,49.55,49.48,56.64,1],[220.0,52.8,54.55,54.3,55.84,6],[230.0,59.25,60.35,60.1,56.1,111],[240.0,65.35,66.3,65.74,56.08,4],[250.0,70.8,72.4,70.92,55.66,10]]}},"TSLA":{"2026-04-17":{"days":9,"fwd":341.86,"calls":[[337.5,13.15,13.5,13.45,43.92,387],[340.0,11.75,12.0,11.85,43.75,6586],[342.5,10.4,10.6,10.43,43.48,3298],[345.0,9.15,9.3,9.2,43.21,5571],[347.5,7.95,8.05,7.87,42.72,3913]],"puts":[[337.5,7.15,7.3,7.33,44.22,736],[340.0,8.15,8.3,8.25,43.81,10891],[342.5,9.25,9.4,9.25,43.41,1801],[345.0,10.45,10.65,10.58,43.12,9176],[347.5,11.75,11.9,12.18,42.59,3526]]},"2026-05-15":{"days":37,"fwd":342.95,"calls":[[335.0,26.0,26.35,25.75,47.47,84],[340.0,23.25,23.5,23.17,47.04,1441],[345.0,20.75,20.9,20.65,46.76,879],[350.0,18.35,18.55,18.34,46.45,2341],[355.0,16.2,16.35,16.1,46.17,1476]],"puts":[[335.0,16.4,16.6,16.6,47.38,836],[340.0,18.65,18.8,18.88,47.05,1272],[345.0,21.05,21.25,21.34,46.8,1575],[350.0,23.65,23.9,23.8,46.55,3153],[355.0,26.45,26.8,26.87,46.3,319]]},"2026-06-18":{"days":71,"fwd":344.28,"calls":[[335.0,33.45,33.75,33.65,46.3,52],[340.0,30.75,31.0,30.7,45.94,832],[345.0,28.2,28.45,28.15,45.66,1139],[350.0,25.85,26.1,26.0,45.48,1231],[355.0,23.6,23.8,23.7,45.2,354]],"puts":[[335.0,22.55,22.8,23.1,46.15,224],[340.0,24.85,25.05,25.15,45.82,896],[345.0,27.25,27.5,27.62,45.53,1733],[350.0,29.85,30.1,30.01,45.29,2434],[355.0,32.6,32.9,33.45,45.11,1000]]},"2026-07-17":{"days":100,"fwd":345.42,"calls":[[320.0,47.4,48.15,47.83,47.35,9],[330.0,41.7,42.2,40.71,46.89,80],[340.0,36.35,36.7,36.35,46.34,291],[350.0,31.5,31.75,31.6,45.89,541],[360.0,27.1,27.35,27.12,45.5,1664]],"puts":[[320.0,21.0,21.2,21.4,47.62,2831],[330.0,24.95,25.2,25.45,46.84,213],[340.0,29.45,29.7,30.0,46.26,776],[350.0,34.5,34.75,35.15,45.78,1016],[360.0,40.05,40.4,40.6,45.42,101]]},"2026-08-21":{"days":135,"fwd":346.88,"calls":[[320.0,54.1,55.95,57.9,49.08,3],[330.0,47.1,50.65,48.02,47.97,38],[340.0,43.55,43.95,43.05,47.68,254],[350.0,38.75,39.1,37.84,47.3,172],[360.0,34.35,34.7,34.17,46.97,470]],"puts":[[320.0,26.5,26.7,26.95,48.57,100],[330.0,30.7,31.0,31.2,48.08,544],[340.0,35.35,35.65,35.9,47.6,522],[350.0,40.45,40.75,40.83,47.19,105],[360.0,46.0,46.35,46.92,46.88,44]]},"2026-09-18":{"days":163,"fwd":348.01,"calls":[[330.0,52.8,53.45,55.0,48.0,13],[340.0,47.85,48.3,48.0,47.73,59],[345.0,45.4,45.8,45.54,47.51,90],[350.0,43.1,43.5,42.88,47.39,555],[355.0,40.85,41.2,40.03,47.2,185]],"puts":[[330.0,33.95,34.25,34.5,48.07,272],[340.0,38.7,39.0,39.25,47.67,366],[345.0,41.25,41.5,41.8,47.49,123],[350.0,43.85,44.15,44.1,47.32,158],[355.0,46.55,46.85,48.0,47.14,57]]},"2026-10-16":{"days":191,"fwd":349.15,"calls":[[335.0,54.1,55.5,58.0,47.39,1],[340.0,52.0,52.75,51.6,47.3,60],[345.0,49.25,50.5,49.54,47.04,17],[350.0,45.85,48.1,47.0,46.31,762],[355.0,44.7,45.95,45.45,46.75,31]],"puts":[[335.0,39.25,40.4,40.6,47.53,5],[340.0,41.85,42.55,42.35,47.28,763],[345.0,44.35,45.1,44.5,47.1,29],[350.0,47.0,48.85,48.07,47.51,16],[355.0,49.6,50.8,48.78,46.9,16]]},"2026-11-20":{"days":226,"fwd":350.61,"calls":[[335.0,58.4,62.3,60.3,48.21,3],[340.0,56.25,59.6,58.1,48.08,28],[345.0,55.25,55.95,54.91,47.97,14],[350.0,53.15,53.7,52.5,47.94,61],[355.0,50.7,51.45,53.05,47.69,6]],"puts":[[335.0,43.8,44.55,44.57,48.39,6],[340.0,46.25,47.05,47.07,48.21,12],[345.0,49.0,49.4,50.3,48.04,11],[350.0,51.65,52.0,50.77,47.88,204],[355.0,54.35,55.05,55.2,47.87,7]]},"2026-12-18":{"days":254,"fwd":351.75,"calls":[[320.0,71.5,72.0,71.12,48.82,93],[330.0,66.35,66.8,64.9,48.53,40],[340.0,61.4,61.85,61.5,48.2,38],[350.0,56.85,57.25,56.57,47.97,237],[360.0,52.5,52.9,52.4,47.72,109]],"puts":[[320.0,39.55,39.9,40.65,48.89,176],[330.0,44.15,45.35,45.2,48.91,60],[340.0,49.05,49.4,49.83,48.18,52],[350.0,54.25,54.65,55.27,47.89,59],[360.0,59.8,60.2,57.91,47.64,912]]},"2027-01-15":{"days":282,"fwd":352.94,"calls":[[320.0,74.85,75.35,74.34,48.83,46],[330.0,69.8,70.2,69.45,48.56,27],[340.0,64.85,65.35,65.0,48.25,125],[350.0,60.35,60.8,59.74,48.04,307],[360.0,56.1,56.5,55.82,47.83,123]],"puts":[[320.0,41.85,42.25,42.61,48.84,215],[330.0,46.55,46.9,47.5,48.52,54],[340.0,51.5,51.9,52.5,48.23,100],[350.0,56.75,57.15,57.1,47.96,353],[360.0,62.3,62.7,63.5,47.71,83]]},"2027-03-19":{"days":345,"fwd":355.61,"calls":[[320.0,82.0,83.0,82.01,49.17,8],[330.0,77.1,81.05,79.97,50.14,5],[340.0,72.65,73.3,72.75,48.8,101],[350.0,66.7,70.2,68.25,48.54,139],[360.0,64.0,65.85,64.2,48.87,27]],"puts":[[320.0,47.3,47.8,47.7,49.37,93],[330.0,50.7,52.85,52.3,48.63,4],[340.0,57.15,57.65,57.9,48.82,337],[350.0,62.5,63.0,61.0,48.6,63],[360.0,68.1,68.65,69.15,48.41,20]]},"2027-06-17":{"days":435,"fwd":359.42,"calls":[[320.0,91.8,94.35,95.8,50.27,31],[330.0,87.05,89.6,86.9,50.05,29],[340.0,82.5,85.15,82.66,49.88,139],[350.0,78.25,79.55,79.0,49.27,295],[360.0,74.15,76.75,74.74,49.56,69]],"puts":[[320.0,54.05,55.1,55.5,50.05,20],[330.0,59.0,60.05,60.0,49.79,5],[340.0,64.2,65.25,65.35,49.58,19],[350.0,69.8,70.4,70.25,49.35,36],[360.0,75.25,76.35,74.0,49.21,5]]},"2027-12-17":{"days":618,"fwd":366.8,"calls":[[320.0,107.45,111.35,107.62,50.44,81],[330.0,103.95,105.3,103.3,50.06,3],[340.0,98.85,102.6,100.65,50.12,13],[350.0,96.1,97.1,95.8,49.96,131],[360.0,90.95,94.6,91.39,49.88,8]],"puts":[[320.0,65.6,66.3,66.53,50.6,38],[330.0,70.75,71.45,71.54,50.4,12],[340.0,76.1,76.85,76.87,50.23,15],[350.0,81.65,82.35,82.44,50.05,9],[360.0,87.4,88.1,82.35,49.9,2]]},"2028-01-21":{"days":653,"fwd":368.21,"calls":[[320.0,110.15,112.75,115.27,49.98,2],[330.0,107.05,108.3,106.4,50.2,104],[340.0,100.0,108.6,103.5,50.55,10],[350.0,97.6,101.45,99.5,49.97,302],[360.0,95.25,97.4,95.75,50.24,64]],"puts":[[320.0,67.25,68.05,68.95,50.56,5],[330.0,72.4,73.3,70.97,50.37,1],[340.0,77.8,78.65,78.54,50.19,6],[350.0,83.35,84.2,84.06,50.02,35],[360.0,89.1,90.0,87.48,49.9,11]]},"2028-06-16":{"days":800,"fwd":374.13,"calls":[[320.0,120.9,124.65,122.25,50.22,15],[330.0,118.25,119.8,118.2,50.35,7],[340.0,112.7,119.7,114.0,50.87,29],[350.0,108.95,112.6,110.35,49.91,14],[360.0,105.15,109.0,105.65,49.82,3]],"puts":[[320.0,73.8,74.75,75.17,50.45,1],[330.0,79.1,80.1,75.81,50.3,1],[340.0,84.55,85.6,83.37,50.15,6],[350.0,90.2,91.2,86.02,50.0,1],[360.0,96.0,97.1,97.56,49.88,4]]}},"ADBE":{"2026-04-17":{"days":9,"fwd":238.52,"calls":[[235.0,7.85,8.6,8.07,35.12,68],[237.5,6.5,7.2,6.55,35.76,58],[240.0,5.2,5.7,5.5,35.09,54],[242.5,4.05,4.4,4.0,34.4,24],[245.0,3.05,3.5,3.15,34.34,1480]],"puts":[[235.0,3.75,4.15,4.33,38.13,185],[237.5,4.7,5.2,5.0,37.76,30],[240.0,5.8,6.45,6.22,37.46,180],[242.5,7.0,8.15,7.13,37.84,23],[245.0,8.7,9.45,9.13,37.51,158]]},"2026-05-15":{"days":37,"fwd":239.4,"calls":[[230.0,16.65,18.15,17.9,37.13,4],[235.0,13.9,14.8,14.2,36.72,49],[240.0,11.45,12.0,11.35,36.59,57],[245.0,9.0,9.75,8.92,36.24,78],[250.0,6.9,7.4,7.15,35.19,123]],"puts":[[230.0,7.4,7.9,7.57,39.84,48],[235.0,9.15,9.85,9.52,39.0,131],[240.0,11.3,12.0,11.72,38.23,68],[245.0,13.8,14.85,14.5,38.02,160],[250.0,16.7,17.7,17.51,37.33,91]]},"2026-06-18":{"days":71,"fwd":240.24,"calls":[[230.0,24.15,24.95,25.5,44.14,0],[235.0,20.5,22.05,25.46,42.67,10],[240.0,18.45,19.15,18.9,42.65,40],[245.0,15.5,16.75,15.8,41.64,65],[250.0,13.7,14.5,14.07,41.67,76]],"puts":[[230.0,13.25,13.9,13.6,44.82,42],[235.0,15.3,16.15,15.93,44.39,0],[240.0,17.3,18.25,18.1,43.23,124],[245.0,19.35,21.1,20.6,42.53,16],[250.0,22.65,23.45,23.62,42.21,36]]},"2026-07-17":{"days":100,"fwd":241.69,"calls":[[230.0,26.45,28.45,29.45,41.94,17],[235.0,22.85,27.1,26.0,42.3,17],[240.0,20.35,22.35,21.7,39.94,20],[245.0,18.8,19.4,18.85,40.01,4],[250.0,15.55,17.5,16.45,39.05,16]],"puts":[[230.0,15.4,16.2,15.8,43.89,5],[235.0,17.4,18.65,16.55,43.61,0],[240.0,19.75,21.05,19.24,43.26,13],[245.0,22.1,22.7,21.1,41.8,36],[250.0,24.8,26.3,24.35,42.28,19]]},"2026-08-21":{"days":135,"fwd":242.63,"calls":[[220.0,35.7,38.25,37.8,42.08,0],[230.0,28.95,31.4,35.16,39.99,0],[240.0,23.65,25.85,25.47,39.33,10],[250.0,19.45,20.45,19.85,38.62,12],[255.0,17.3,18.65,18.3,38.58,1]],"puts":[[220.0,13.95,14.8,14.25,43.59,22],[230.0,17.7,18.45,18.0,42.33,1],[240.0,22.1,23.3,22.98,41.72,0],[250.0,27.2,28.25,27.87,40.68,0],[255.0,29.6,31.15,29.6,39.99,0]]},"2026-09-18":{"days":163,"fwd":243.52,"calls":[[220.0,39.05,42.4,43.51,44.15,72],[230.0,33.7,35.05,38.95,42.66,0],[240.0,28.4,29.7,30.35,42.01,0],[250.0,23.55,24.9,26.15,41.28,77],[260.0,19.3,20.05,20.1,40.12,29]],"puts":[[220.0,16.5,17.9,16.65,45.23,0],[230.0,20.25,21.9,20.4,44.08,1],[240.0,25.2,26.45,25.6,43.59,30],[250.0,29.75,30.9,30.25,41.8,32],[260.0,35.65,37.15,33.75,41.63,4]]},"2026-10-16":{"days":191,"fwd":248.33,"calls":[[230.0,34.85,39.45,44.49,38.48,0],[235.0,32.3,35.3,37.8,37.47,0],[240.0,29.55,34.4,33.0,38.49,0],[245.0,27.6,30.45,33.33,37.67,0],[250.0,25.45,29.55,29.32,38.68,1]],"puts":[[230.0,20.9,23.4,23.58,43.89,0],[235.0,21.85,25.75,24.0,42.74,0],[240.0,24.2,28.2,27.8,42.5,0],[245.0,26.25,30.8,28.95,41.98,0],[250.0,29.25,33.35,32.65,41.91,0]]},"2026-11-20":{"days":226,"fwd":249.02,"calls":[[220.0,43.4,46.45,45.68,37.9,2],[230.0,37.7,42.15,39.25,38.83,0],[240.0,32.55,36.25,37.5,38.22,0],[250.0,27.85,31.65,32.3,38.11,5],[255.0,25.45,30.0,29.41,38.19,1]],"puts":[[220.0,17.8,20.95,21.2,43.24,0],[230.0,21.2,24.95,22.83,41.98,1],[240.0,26.8,29.95,28.47,42.36,0],[250.0,30.95,35.25,32.33,41.29,5],[255.0,33.65,38.1,35.35,41.05,5]]},"2026-12-18":{"days":254,"fwd":246.35,"calls":[[220.0,46.5,49.45,52.25,42.83,1],[230.0,40.45,45.85,46.65,43.31,0],[240.0,35.5,38.9,38.7,41.74,0],[250.0,30.7,32.85,32.5,40.35,90],[260.0,26.5,28.45,27.7,39.83,113]],"puts":[[220.0,20.8,22.95,22.8,43.28,0],[230.0,23.85,27.35,25.07,42.0,2],[240.0,28.1,32.2,33.4,41.24,0],[250.0,33.8,37.45,34.65,41.06,0],[260.0,39.5,43.25,40.75,40.65,2]]},"2027-01-15":{"days":282,"fwd":248.49,"calls":[[220.0,48.2,51.4,52.6,41.31,14],[230.0,42.75,47.1,43.5,41.77,10],[240.0,37.7,40.7,41.38,40.61,1],[250.0,32.8,35.8,37.47,39.98,4],[260.0,28.65,33.05,31.55,40.56,0]],"puts":[[220.0,23.25,24.45,22.5,44.44,1],[230.0,25.3,29.15,27.63,42.7,7],[240.0,29.6,33.5,30.59,41.69,1],[250.0,37.05,38.65,35.6,42.52,2],[260.0,41.95,45.55,41.35,42.36,2]]},"2027-03-19":{"days":345,"fwd":249.35,"calls":[[220.0,51.15,56.1,54.63,41.63,0],[230.0,47.05,49.5,49.0,41.28,1],[240.0,42.1,45.9,45.95,41.69,0],[250.0,37.95,40.85,42.0,41.31,0],[260.0,33.6,36.55,35.53,40.85,1]],"puts":[[220.0,23.85,27.55,25.22,42.76,2],[230.0,26.55,31.95,31.3,41.31,0],[240.0,31.2,37.55,36.06,41.22,0],[250.0,38.75,42.3,41.0,41.78,0],[260.0,45.0,49.45,46.45,42.5,0]]},"2027-06-17":{"days":435,"fwd":253.71,"calls":[[220.0,57.85,64.0,64.23,42.27,0],[230.0,52.35,56.9,54.7,40.84,0],[240.0,45.0,54.0,54.8,40.33,3],[250.0,43.85,47.75,48.2,40.88,1],[260.0,39.15,43.7,44.15,40.46,0]],"puts":[[220.0,27.15,31.35,31.0,43.15,0],[230.0,30.35,35.2,34.3,41.71,0],[240.0,37.55,41.7,37.65,43.3,1],[250.0,41.25,47.45,44.7,42.39,0],[260.0,46.0,52.75,49.85,41.47,0]]},"2027-12-17":{"days":618,"fwd":258.22,"calls":[[220.0,67.0,75.0,72.36,42.89,0],[230.0,62.0,70.0,67.0,42.52,0],[240.0,57.0,65.0,66.25,41.94,0],[250.0,52.0,61.0,58.0,41.56,0],[260.0,48.0,57.0,63.91,41.41,0]],"puts":[[220.0,32.0,40.0,35.44,43.54,0],[230.0,36.0,42.8,39.82,42.04,0],[240.0,41.0,50.0,43.69,42.64,1],[250.0,47.0,53.05,49.62,41.66,2],[260.0,54.1,59.1,54.0,42.13,1]]},"2028-01-21":{"days":653,"fwd":259.59,"calls":[[220.0,70.1,76.0,75.2,42.93,1],[230.0,65.45,70.45,70.9,42.46,0],[240.0,61.5,67.0,61.85,42.94,4],[250.0,55.05,62.0,58.8,41.55,14],[260.0,51.05,55.8,54.3,40.52,5]],"puts":[[220.0,33.1,40.95,37.02,43.6,1],[230.0,37.4,43.5,40.72,42.13,1],[240.0,44.15,50.8,47.14,43.47,9],[250.0,49.35,53.5,51.95,42.03,37],[260.0,54.5,59.5,57.35,41.69,0]]}},"AVGO":{"2026-04-17":{"days":9,"fwd":351.2,"calls":[[345.0,13.0,13.45,13.4,43.19,839],[347.5,11.45,12.05,11.95,42.86,482],[350.0,10.0,10.45,10.15,41.89,4743],[352.5,8.75,9.45,9.26,42.22,181],[355.0,7.4,8.15,8.02,41.25,1202]],"puts":[[345.0,7.05,7.45,7.3,43.04,378],[347.5,7.45,8.5,8.0,41.42,908],[350.0,9.1,9.3,9.3,41.56,2540],[352.5,9.9,11.0,10.73,41.36,18],[355.0,11.3,12.5,11.89,41.57,546]]},"2026-05-15":{"days":37,"fwd":352.2,"calls":[[330.0,32.7,33.3,33.6,45.64,779],[340.0,26.15,27.05,26.52,44.69,680],[350.0,20.55,21.05,20.75,43.44,1244],[360.0,15.65,16.05,15.75,42.37,1082],[370.0,11.6,12.4,11.8,42.0,1733]],"puts":[[330.0,11.0,11.6,11.0,46.04,516],[340.0,14.2,15.15,14.35,44.53,841],[350.0,18.65,19.2,18.95,43.58,406],[360.0,23.3,25.2,23.97,43.19,294],[370.0,29.6,30.55,29.72,41.94,99]]},"2026-06-18":{"days":71,"fwd":353.42,"calls":[[330.0,42.5,43.9,43.18,50.45,464],[340.0,36.8,37.45,37.59,49.4,710],[350.0,31.55,32.0,31.7,48.75,1704],[360.0,26.8,27.1,26.85,48.14,1215],[370.0,22.5,22.8,22.66,47.56,2752],[330.0,46.8,48.55,47.25,48.96,77],[340.0,41.4,42.65,42.19,48.45,342],[350.0,36.05,37.0,36.25,47.55,447],[360.0,30.95,31.8,31.4,46.55,197],[370.0,26.85,27.5,27.45,46.25,224],[330.0,52.25,54.4,53.0,48.31,52],[340.0,46.95,48.35,47.5,47.65,63],[350.0,41.85,42.85,42.25,47.0,143],[360.0,37.2,38.1,38.1,46.62,48],[370.0,32.8,33.8,33.28,46.22,192],[330.0,57.75,58.9,59.0,49.27,29],[340.0,52.4,53.8,52.7,49.02,197],[350.0,47.25,48.25,48.25,48.26,114],[360.0,42.65,43.85,43.0,48.08,154],[370.0,38.35,39.2,38.79,47.57,327],[330.0,61.0,62.95,62.12,48.32,29],[340.0,55.75,57.4,55.3,47.82,12],[350.0,50.65,52.25,51.5,47.3,787],[360.0,46.3,47.7,46.59,47.15,44],[370.0,41.6,43.35,42.2,46.62,34],[330.0,64.95,66.95,65.9,47.71,14],[340.0,59.7,61.9,60.45,47.41,6],[350.0,55.3,56.75,55.95,47.2,51],[360.0,50.35,52.1,51.28,46.7,19],[370.0,45.9,47.85,47.1,46.36,16],[330.0,69.55,71.0,70.4,48.55,159],[340.0,64.2,65.85,65.1,48.1,87],[350.0,59.55,61.05,60.0,47.88,219],[360.0,54.8,56.5,56.0,47.49,41],[370.0,51.0,52.0,51.45,47.32,42],[330.0,72.15,73.4,72.44,47.9,129],[340.0,67.15,68.25,67.37,47.58,83],[350.0,62.5,63.2,62.5,47.23,526],[360.0,58.15,59.05,58.81,47.18,83],[370.0,54.1,55.0,54.6,47.08,118],[330.0,78.85,81.6,79.35,48.44,29],[340.0,72.6,76.95,75.0,47.74,25],[350.0,69.5,70.5,72.5,47.4,40],[360.0,65.2,66.8,66.31,47.48,23],[370.0,61.05,62.55,62.04,47.25,22],[330.0,87.15,89.95,89.0,48.12,18],[340.0,82.1,85.3,84.0,47.81,44],[350.0,78.15,80.35,78.95,47.64,97],[360.0,74.3,76.05,73.66,47.59,16],[370.0,70.3,72.4,68.0,47.57,89],[330.0,94.2,97.15,95.0,47.59,21],[340.0,90.75,92.7,91.29,47.8,8],[350.0,85.9,88.5,85.35,47.52,11],[360.0,82.35,85.0,79.83,47.75,86],[370.0,78.55,80.05,76.62,47.35,1],[330.0,101.2,104.4,102.79,47.62,1],[340.0,97.3,100.5,98.74,47.76,3],[350.0,93.0,95.95,94.55,47.49,11],[360.0,88.75,92.4,90.75,47.44,13],[370.0,85.2,87.6,86.0,47.14,1],[330.0,104.1,106.85,105.5,47.71,156],[340.0,98.9,102.25,101.35,47.25,12],[350.0,95.05,98.0,96.36,47.18,61],[360.0,90.85,94.1,92.37,47.03,30],[370.0,87.45,90.8,89.03,47.18,10]],"puts":[[330.0,20.0,20.5,20.0,50.45,150],[340.0,23.8,24.7,23.78,49.5,343],[350.0,28.25,29.25,28.35,48.67,226],[360.0,33.35,34.1,34.0,47.77,79],[370.0,38.85,40.0,39.05,47.23,39],[330.0,23.7,24.8,23.83,49.21,156],[340.0,27.8,28.9,28.26,48.42,39],[350.0,32.4,33.65,32.5,47.84,34],[360.0,37.15,38.65,37.91,46.92,9],[370.0,42.95,44.25,43.15,46.54,664],[330.0,27.75,28.9,28.24,47.88,20],[340.0,32.45,33.4,32.35,47.67,17],[350.0,36.7,38.25,37.6,46.93,17],[360.0,41.8,43.45,42.45,46.45,3],[370.0,47.2,49.3,63.25,46.08,0],[330.0,32.15,33.3,32.9,49.16,214],[340.0,36.55,37.6,37.4,48.55,195],[350.0,41.35,42.35,41.76,48.04,463],[360.0,46.5,47.7,46.6,47.68,3],[370.0,51.95,53.6,53.4,47.41,9],[330.0,34.95,36.45,35.85,48.32,40],[340.0,39.3,41.1,40.5,47.85,3],[350.0,44.55,45.95,44.8,47.61,3],[360.0,49.25,51.3,50.85,47.04,2],[370.0,54.75,56.6,55.7,46.53,10],[330.0,38.1,39.25,38.4,47.75,1],[340.0,42.6,43.85,42.65,47.3,2],[350.0,47.95,49.2,48.25,47.33,13],[360.0,52.75,54.1,52.85,46.62,10],[370.0,58.3,59.8,58.45,46.36,2],[330.0,41.1,42.55,42.05,48.26,24],[340.0,45.75,47.6,46.5,48.05,14],[350.0,50.75,52.7,51.3,47.76,123],[360.0,56.05,57.95,56.04,47.44,154],[370.0,61.5,63.3,62.5,47.0,7],[330.0,43.15,44.85,44.9,48.01,30],[340.0,48.5,49.65,48.9,47.96,192],[350.0,53.1,54.7,53.71,47.48,229],[360.0,58.3,60.1,59.57,47.18,10],[370.0,64.0,65.35,65.25,46.82,3],[330.0,47.0,50.0,48.5,47.62,1],[340.0,53.25,54.85,53.7,47.88,10],[350.0,58.2,59.9,58.95,47.53,55],[360.0,63.9,65.35,64.5,47.44,9],[370.0,69.1,71.1,90.2,47.1,0],[330.0,53.6,55.95,55.3,47.7,9],[340.0,59.5,61.65,60.76,48.04,10],[350.0,64.45,66.4,65.55,47.57,3],[360.0,69.2,71.8,86.6,47.11,0],[370.0,76.1,78.25,93.95,47.59,0],[330.0,59.95,62.2,67.23,48.19,0],[340.0,65.15,67.3,66.5,48.02,1],[350.0,70.35,72.55,71.03,47.78,1],[360.0,75.9,78.1,0.0,47.63,0],[370.0,81.85,83.85,90.15,47.55,0],[330.0,64.55,67.25,74.35,48.12,0],[340.0,69.05,72.05,71.55,47.62,1],[350.0,74.35,77.7,76.04,47.5,354],[360.0,81.15,83.35,82.8,47.73,1],[370.0,86.65,88.9,87.6,47.46,5],[330.0,66.4,67.95,69.1,47.8,6],[340.0,71.95,73.65,72.25,47.88,8],[350.0,76.65,78.45,77.41,47.34,108],[360.0,82.85,84.7,84.4,47.55,2],[370.0,88.2,90.5,89.45,47.3,32]]}},"CAT":{"2026-04-17":{"days":9,"fwd":771.24,"calls":[[760.0,25.35,27.15,25.22,38.36,169],[765.0,21.15,23.45,20.5,35.82,28],[770.0,19.35,20.5,19.71,36.66,627],[775.0,16.25,17.75,17.75,35.42,83],[780.0,14.25,15.25,13.81,35.62,490],[NaN,null,null,null,null,0],[750.0,52.0,54.85,53.73,41.44,15],[760.0,46.35,48.55,47.0,40.85,90],[770.0,41.75,43.5,40.7,40.9,30],[780.0,36.25,37.7,37.24,39.89,15],[790.0,30.65,33.2,31.38,39.24,22],[NaN,null,null,null,null,0],[750.0,66.05,69.45,68.76,40.27,47],[760.0,60.5,63.3,61.75,39.67,24],[770.0,55.0,57.85,55.7,39.38,57],[780.0,49.75,52.85,50.55,39.02,54],[790.0,45.0,47.7,45.72,38.58,15],[NaN,null,null,null,null,0],[750.0,76.55,79.15,78.8,40.06,39],[760.0,71.35,73.75,72.25,39.82,14],[770.0,65.9,68.25,66.8,39.44,14],[780.0,60.0,62.7,61.58,38.84,43],[790.0,55.05,57.85,56.01,38.51,71],[NaN,null,null,null,null,0],[740.0,94.45,97.75,90.0,41.2,1],[760.0,83.0,86.9,59.9,40.52,0],[780.0,72.1,75.35,74.0,39.49,5],[800.0,62.5,65.75,63.55,38.98,3],[820.0,53.65,57.05,55.1,38.39,4],[NaN,null,null,null,null,0],[740.0,101.95,104.9,102.49,40.7,2],[760.0,90.1,93.0,93.05,39.83,18],[780.0,79.4,82.55,81.95,39.17,39],[790.0,75.05,77.65,49.05,39.04,0],[800.0,69.5,73.5,71.53,38.7,1],[NaN,null,null,null,null,0],[750.0,111.0,114.75,75.63,39.39,0],[760.0,105.8,109.35,103.6,39.24,2],[770.0,100.5,104.2,98.75,38.91,2],[780.0,95.5,98.8,93.3,38.67,8],[790.0,90.5,94.6,0.0,38.55,0],[NaN,null,null,null,null,0],[740.0,122.95,126.15,102.55,39.56,0],[760.0,111.75,115.85,85.32,39.1,0],[780.0,101.5,105.45,58.0,38.58,0],[790.0,96.5,100.75,63.9,38.36,0],[800.0,92.0,95.3,63.8,37.98,0],[NaN,null,null,null,null,0],[740.0,128.3,132.0,127.47,39.33,1],[760.0,117.5,120.95,118.0,38.73,12],[780.0,107.5,111.45,82.35,38.5,0],[790.0,102.5,106.45,79.8,38.23,0],[800.0,98.5,101.0,98.95,38.01,513],[NaN,null,null,null,null,0],[740.0,140.0,145.0,110.02,39.34,0],[760.0,129.5,134.0,131.22,38.84,1],[780.0,120.0,124.0,120.41,38.46,4],[790.0,115.0,119.0,90.3,38.16,0],[800.0,110.5,114.5,110.23,38.12,2],[NaN,null,null,null,null,0],[740.0,155.5,160.5,127.06,39.04,0],[760.0,145.5,149.5,127.5,38.54,0],[780.0,135.5,140.5,82.6,38.33,0],[790.0,131.0,135.0,82.19,38.08,0],[800.0,126.0,130.0,124.18,37.79,1],[NaN,null,null,null,null,0],[740.0,182.5,187.0,150.92,38.72,0],[760.0,173.0,177.5,166.44,38.44,6],[780.0,163.5,168.0,157.15,38.13,22],[790.0,159.0,163.5,161.34,38.01,60],[800.0,154.5,159.0,128.98,37.9,0],[NaN,null,null,null,null,0],[740.0,187.0,191.5,180.25,38.69,8],[760.0,177.0,182.0,176.0,38.38,13],[780.0,168.0,172.5,161.35,38.08,22],[790.0,163.5,168.0,165.64,37.88,60],[800.0,159.0,163.5,157.56,37.85,2]],"puts":[[760.0,12.95,14.1,14.12,37.65,103],[765.0,14.4,15.75,16.7,36.23,41],[770.0,16.75,18.85,17.5,36.96,194],[775.0,18.4,20.8,19.75,35.45,31],[780.0,21.55,24.2,23.5,36.71,32],[NaN,null,null,null,null,0],[750.0,30.1,32.45,31.15,42.01,34],[760.0,34.35,36.0,35.1,41.35,23],[770.0,38.55,40.85,40.03,40.98,12],[780.0,43.1,45.35,44.85,40.32,17],[790.0,48.55,50.5,48.45,39.92,26],[NaN,null,null,null,null,0],[750.0,41.5,44.15,44.05,40.38,7],[760.0,45.85,48.35,47.7,40.01,29],[770.0,50.45,53.35,52.3,39.81,38],[780.0,54.7,58.1,58.21,39.29,8],[790.0,60.0,63.25,126.1,38.88,0],[NaN,null,null,null,null,0],[750.0,50.15,52.9,51.54,40.56,38],[760.0,54.15,56.65,55.0,39.92,16],[770.0,58.55,60.7,60.2,39.37,25],[780.0,63.45,65.85,65.85,39.16,8],[790.0,67.55,71.2,71.8,38.62,4],[NaN,null,null,null,null,0],[740.0,56.25,58.8,59.45,41.23,54],[760.0,64.65,67.55,88.0,40.53,0],[780.0,73.75,77.0,104.05,39.83,0],[800.0,83.95,86.95,86.2,39.12,1],[820.0,94.15,98.2,130.5,38.4,0],[NaN,null,null,null,null,0],[740.0,61.2,63.3,64.1,40.39,5],[760.0,69.45,72.65,71.7,39.93,60],[780.0,78.1,82.0,127.15,39.14,0],[790.0,82.75,86.6,111.55,38.61,0],[800.0,88.55,91.35,90.83,38.44,1],[NaN,null,null,null,null,0],[750.0,77.3,80.65,80.38,39.61,1],[760.0,81.95,85.1,106.68,39.37,0],[770.0,85.95,89.75,95.7,38.98,0],[780.0,91.0,94.5,120.45,38.76,0],[790.0,96.3,99.25,143.65,38.53,0],[NaN,null,null,null,null,0],[740.0,77.25,80.55,107.0,39.67,0],[760.0,86.05,89.3,91.85,39.13,1],[780.0,95.6,98.8,96.63,38.66,1],[790.0,100.6,103.8,142.5,38.48,0],[800.0,104.95,108.85,128.09,38.03,0],[NaN,null,null,null,null,0],[740.0,80.55,84.0,84.76,39.31,10],[760.0,89.55,93.3,91.8,38.89,1],[780.0,99.2,102.6,101.5,38.41,9],[790.0,104.2,107.9,106.55,38.25,5],[800.0,109.4,113.0,111.7,38.03,2],[NaN,null,null,null,null,0],[740.0,89.0,93.5,112.35,39.2,0],[760.0,98.0,102.5,0.0,38.76,0],[780.0,108.0,112.5,0.0,38.48,0],[790.0,113.35,117.5,0.0,38.34,0],[800.0,118.05,122.5,139.1,38.04,0],[NaN,null,null,null,null,0],[740.0,99.0,102.3,102.2,38.64,13],[760.0,109.0,113.0,110.85,38.63,16],[780.0,118.5,123.0,120.55,38.28,8],[790.0,123.5,127.95,126.3,38.09,4],[800.0,128.0,133.0,161.83,37.79,0],[NaN,null,null,null,null,0],[740.0,117.0,122.0,120.62,38.68,2],[760.0,126.5,131.0,130.5,38.3,1],[780.0,136.5,141.0,140.82,38.05,1],[790.0,141.5,146.0,194.35,37.88,0],[800.0,146.5,151.3,173.75,37.75,0],[NaN,null,null,null,null,0],[740.0,119.5,124.5,123.08,38.46,32],[760.0,129.0,133.65,133.0,38.13,2],[780.0,139.0,143.5,142.5,37.86,2],[790.0,144.0,149.0,190.2,37.76,0],[800.0,149.0,154.0,158.05,37.58,0]]}},"DIS":{"2026-04-17":{"days":9,"fwd":98.88,"calls":[[97.0,2.89,3.2,3.0,25.8,52],[98.0,2.36,2.47,2.28,26.16,128],[99.0,1.76,1.87,1.71,25.56,388],[100.0,1.26,1.43,1.28,25.47,538],[101.0,0.85,0.97,0.96,24.53,99]],"puts":[[97.0,0.78,0.89,0.88,26.64,114],[98.0,1.08,1.18,1.27,25.8,69],[99.0,1.47,1.64,1.65,25.54,128],[100.0,1.95,2.13,2.26,24.81,352],[101.0,2.53,3.2,2.93,28.13,82]]},"2026-05-15":{"days":37,"fwd":99.16,"calls":[[90.0,10.4,11.15,10.6,36.6,50],[95.0,6.7,7.4,6.82,34.93,25],[100.0,3.95,4.1,4.0,32.72,330],[105.0,1.91,2.0,1.87,30.95,749],[110.0,0.74,0.84,0.74,29.76,535]],"puts":[[90.0,1.26,1.38,1.35,37.29,319],[95.0,2.42,2.6,2.5,34.83,196],[100.0,4.35,4.6,4.59,32.75,165],[105.0,7.25,7.7,7.65,31.22,41],[110.0,10.75,12.1,11.42,30.63,7]]},"2026-06-18":{"days":71,"fwd":99.5,"calls":[[90.0,11.35,12.1,11.7,32.74,3],[95.0,7.7,8.45,8.24,30.82,39],[100.0,5.2,5.4,5.25,30.4,644],[105.0,2.99,3.1,3.0,28.76,617],[110.0,1.56,1.66,1.59,27.83,212],[NaN,null,null,null,null,0],[90.0,12.0,12.85,10.33,32.51,0],[95.0,8.55,9.15,8.7,30.53,166],[100.0,5.9,6.05,5.75,29.39,277],[105.0,3.65,3.8,3.65,28.14,315],[110.0,2.15,2.23,2.09,27.36,50],[NaN,null,null,null,null,0],[90.0,12.9,13.85,11.61,32.31,0],[95.0,9.45,10.3,8.54,30.28,0],[100.0,7.1,7.55,7.2,30.29,15],[105.0,4.95,5.2,4.9,29.47,17],[110.0,3.3,3.45,3.35,28.75,615],[NaN,null,null,null,null,0],[90.0,13.2,14.4,13.85,30.67,1],[95.0,10.25,11.0,9.27,30.06,0],[100.0,7.7,8.2,7.8,29.53,37],[105.0,5.45,5.8,5.58,28.58,17],[110.0,3.85,4.05,3.9,28.25,95],[NaN,null,null,null,null,0],[90.0,13.3,15.1,10.78,28.9,0],[95.0,10.8,11.8,10.02,29.28,0],[100.0,8.55,9.0,8.6,29.29,5],[105.0,5.75,6.6,6.36,27.49,39],[110.0,4.35,4.8,4.6,27.72,17],[NaN,null,null,null,null,0],[90.0,15.25,16.15,11.9,31.49,0],[95.0,12.35,12.9,12.4,30.8,1],[100.0,9.75,10.25,9.5,30.36,40],[105.0,7.4,8.0,7.75,29.69,3],[110.0,5.3,6.0,5.8,28.64,2],[NaN,null,null,null,null,0],[90.0,15.85,16.55,15.5,31.43,1],[95.0,12.85,13.4,12.3,30.64,1],[100.0,10.15,10.65,10.19,29.83,1],[105.0,7.75,8.45,8.05,29.2,11],[110.0,6.0,6.5,6.21,28.85,31],[NaN,null,null,null,null,0],[90.0,16.25,17.7,16.75,32.29,4],[95.0,13.2,14.75,13.1,31.52,13],[100.0,10.55,11.95,10.85,30.61,27],[105.0,8.3,8.75,8.35,28.76,7],[110.0,6.3,7.0,6.6,28.37,23],[NaN,null,null,null,null,0],[90.0,17.45,18.35,17.63,31.0,15],[95.0,14.35,15.5,12.85,30.29,0],[100.0,12.05,13.5,12.0,30.95,2],[105.0,9.85,10.55,9.95,29.69,90],[110.0,7.35,8.5,8.0,28.43,11],[NaN,null,null,null,null,0],[90.0,18.9,21.0,17.33,31.89,0],[95.0,16.5,17.15,16.66,30.65,4],[100.0,13.15,16.0,13.97,30.91,30],[105.0,10.65,13.15,11.89,29.54,5],[110.0,9.5,10.3,9.92,29.12,1],[NaN,null,null,null,null,0],[90.0,20.0,24.5,21.16,31.91,0],[95.0,17.5,20.95,19.5,30.68,1],[100.0,15.0,18.55,17.01,30.23,20],[105.0,12.5,15.55,13.72,28.78,0],[110.0,11.95,13.45,12.85,29.7,40],[NaN,null,null,null,null,0],[90.0,20.75,22.95,22.45,30.98,1],[95.0,18.25,21.05,20.0,31.11,1],[100.0,16.65,18.85,17.65,31.68,22],[105.0,14.85,15.8,14.2,30.78,0],[110.0,12.2,14.5,13.55,30.39,17]],"puts":[[90.0,2.0,2.1,2.1,33.78,75],[95.0,3.25,3.5,3.42,31.7,94],[100.0,5.25,5.5,5.55,30.19,292],[105.0,7.9,8.55,8.2,28.9,169],[110.0,11.45,11.95,11.87,26.35,17],[NaN,null,null,null,null,0],[90.0,2.63,2.77,2.74,32.46,152],[95.0,4.1,4.3,4.25,30.91,46],[100.0,6.2,6.45,6.45,29.67,105],[105.0,8.95,9.25,9.2,28.56,15],[110.0,12.25,13.05,12.7,28.26,1],[NaN,null,null,null,null,0],[90.0,3.4,3.9,3.8,33.15,11],[95.0,5.25,5.5,5.3,32.13,6],[100.0,7.35,7.65,7.58,30.84,13],[105.0,9.45,10.3,10.45,28.38,2],[110.0,13.25,14.15,13.87,30.03,1],[NaN,null,null,null,null,0],[90.0,4.0,4.35,4.18,32.97,17],[95.0,5.7,5.85,5.7,31.31,35],[100.0,7.75,8.15,7.95,30.28,31],[105.0,10.35,10.75,13.0,29.0,0],[110.0,13.65,15.05,15.8,30.67,0],[NaN,null,null,null,null,0],[90.0,4.2,4.8,5.7,31.68,0],[95.0,6.1,6.55,6.45,30.89,1],[100.0,8.25,8.7,8.55,29.8,33],[105.0,10.8,11.6,11.75,29.16,3],[110.0,13.95,15.1,16.35,29.1,0],[NaN,null,null,null,null,0],[90.0,4.95,5.65,5.3,32.48,1],[95.0,6.85,7.6,7.1,31.85,1],[100.0,9.05,9.7,9.3,30.75,7],[105.0,11.65,12.3,12.05,29.79,21],[110.0,14.75,16.4,15.2,30.84,7],[NaN,null,null,null,null,0],[90.0,5.55,6.0,5.65,32.28,39],[95.0,7.25,7.95,7.63,31.34,38],[100.0,9.6,10.0,9.8,30.44,6],[105.0,12.05,12.7,12.63,29.52,3],[110.0,15.1,16.4,17.9,29.91,0],[NaN,null,null,null,null,0],[90.0,5.85,6.35,5.97,31.93,164],[95.0,7.65,9.0,8.0,32.18,55],[100.0,9.9,12.15,10.26,32.71,8],[105.0,12.5,13.0,13.37,29.4,1],[110.0,15.45,16.65,17.95,29.64,0],[NaN,null,null,null,null,0],[90.0,6.7,7.1,7.05,31.76,121],[95.0,8.5,9.2,9.05,31.1,2],[100.0,10.8,11.3,12.9,30.26,0],[105.0,13.35,13.95,15.9,29.59,0],[110.0,15.95,17.6,18.6,29.45,0],[NaN,null,null,null,null,0],[90.0,7.0,8.65,10.0,31.42,0],[95.0,9.0,10.45,10.75,30.57,0],[100.0,11.75,12.55,12.2,30.32,2],[105.0,14.35,15.9,15.8,30.65,5],[110.0,16.9,18.35,19.83,29.16,0],[NaN,null,null,null,null,0],[90.0,9.45,10.35,10.26,30.62,0],[95.0,11.0,14.5,12.95,31.72,0],[100.0,13.9,14.7,14.35,29.66,16],[105.0,15.0,19.45,16.9,29.91,72],[110.0,17.5,21.9,21.1,28.82,0],[NaN,null,null,null,null,0],[90.0,9.65,10.5,10.27,30.29,10],[95.0,11.05,12.95,12.5,29.5,1],[100.0,14.35,15.1,14.45,29.82,20],[105.0,16.45,19.5,20.75,30.7,0],[110.0,19.25,21.95,21.51,29.92,0]]}}}};
+
+// ═══════════════════════════════════════════
+// STRATEGY PAGE
+// ═══════════════════════════════════════════
+let stSym='NVDA', stExpIdx=0, stLegs=[], stStrat='custom', _hvCh=null, _skCh=null, _pnlCh=null;
+let _stratInited=false;
+
+function initStratPage(){
+  if(_stratInited)return;
+  _stratInited=true;
+  // Defer one frame so DOM has laid out and offsetWidth is correct
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ onStSym(); }); });
+}
+
+function onStSym(){
+  stSym=document.getElementById('st-sym')?.value||'NVDA';
+  stExpIdx=0;
+  stLegs=[];
+  renderStratQuote();
+  renderExpTabs();
+  renderChain();
+  renderHV();
+  renderSkew();
+  renderPnL();
+  renderLegs();
+  renderMetrics();
+  // Auto-set IV from OMON near-term ATM
+  const exps=Object.keys(MARKET_DATA.omon[stSym]||{});
+  if(exps.length){
+    const d=MARKET_DATA.omon[stSym][exps[0]];
+    if(d.calls.length){
+      const mid=Math.floor(d.calls.length/2);
+      const iv=d.calls[mid][4];
+      if(iv){document.getElementById('st-iv').value=Math.round(iv);}
+    }
+  }
+}
+
+function onStIV(){
+  renderChain();
+  renderPnL();
+}
+
+function getSpot(){
+  // Use live price if available, fallback to OMON forward or HP last
+  const live=getPrice(stSym)||getPrice(stSym+'.TW');
+  if(live&&live>0)return live;
+  const exps=Object.keys(MARKET_DATA.omon[stSym]||{});
+  if(exps.length)return MARKET_DATA.omon[stSym][exps[0]].fwd;
+  const hp=MARKET_DATA.hp[stSym];
+  return hp?hp.p[hp.p.length-1]:100;
+}
+
+function getIV(){ return (parseFloat(document.getElementById('st-iv')?.value)||30)/100; }
+
+function renderStratQuote(){
+  const spot=getSpot();
+  const q=Q[stSym]||{};
+  const chg=q.change||0, chgPct=q.changePct||0;
+  const cls=chg>0?'up':chg<0?'dn':'flat';
+  // HV30 from HP
+  const hp=MARKET_DATA.hp[stSym];
+  let hv30=null;
+  if(hp&&hp.hv.length) hv30=hp.hv[hp.hv.length-1];
+  document.getElementById('st-quote').innerHTML=`
+    <div class="quote-pill">
+      <div>
+        <div class="qp-sym">${stSym} <span class="badge b-us" style="font-size:8px">US</span></div>
+        <div class="qp-sub">HV21: ${hv30!=null?hv30+'%':'--'} &nbsp;|&nbsp; IV: ${Math.round(getIV()*100)}%</div>
+      </div>
+      <div style="text-align:right">
+        <div class="qp-price ${cls}">$${fmt(spot)}</div>
+        <div class="qp-sub ${cls}">${chg>=0?'+':''}${fmt(chg)} (${chgPct>=0?'+':''}${fmt(chgPct)}%)</div>
+      </div>
+    </div>`;
+}
+
+function setExpIdx(i){
+  stExpIdx=i;
+  renderExpTabs();
+  renderChain();
+  renderSkew();
+  renderPnL();
+}
+
+function renderExpTabs(){
+  const exps=Object.keys(MARKET_DATA.omon[stSym]||{});
+  const box=document.getElementById('st-exp-tabs'); if(!box)return;
+  box.innerHTML=exps.map((e,i)=>{
+    const d=MARKET_DATA.omon[stSym][e];
+    return `<div class="et${i===stExpIdx?' on':''}" onclick="setExpIdx(${i})">${e.slice(5)} <span style="opacity:.6">${d.days}d</span></div>`;
+  }).join('');
+}
+
+function getExpData(){
+  const exps=Object.keys(MARKET_DATA.omon[stSym]||{});
+  if(!exps.length)return null;
+  stExpIdx=Math.min(stExpIdx,exps.length-1);
+  return {exp:exps[stExpIdx], data:MARKET_DATA.omon[stSym][exps[stExpIdx]]};
+}
+
+function renderChain(){
+  const ed=getExpData(); if(!ed)return;
+  const {exp,data}=ed;
+  const spot=getSpot();
+  const info=document.getElementById('st-chain-info');
+  if(info) info.textContent=`${data.days}d · Fwd $${data.fwd}`;
+  
+  // Find selected leg strikes
+  const selC=new Set(stLegs.filter(l=>l.type==='call'&&l.exp===exp).map(l=>l.strike));
+  const selP=new Set(stLegs.filter(l=>l.type==='put'&&l.exp===exp).map(l=>l.strike));
+  
+  const maxIV=Math.max(...data.calls.map(c=>c[4]||0),...data.puts.map(p=>p[4]||0),1);
+  
+  const tb=document.getElementById('st-chain-body'); if(!tb)return;
+  tb.innerHTML=data.calls.map((c,i)=>{
+    const p=data.puts[i]||[c[0]];
+    const K=c[0];
+    const isATM=Math.abs(K-spot)<(data.calls[1]?data.calls[1][0]-data.calls[0][0]:spot*0.03);
+    const cSel=selC.has(K), pSel=selP.has(K);
+    const civW=c[4]?Math.round(c[4]/maxIV*40):0;
+    const pivW=p[4]?Math.round(p[4]/maxIV*40):0;
+    return `<tr class="${isATM?'atm':''} ${cSel?'sel-c':''} ${pSel?'sel-p':''}">
+      <td style="text-align:center"><button onclick="addLeg('call',${K},'${exp}',${c[1]||0},${c[2]||0},${c[4]||30})" style="font-size:9px;padding:1px 5px;background:rgba(10,143,92,.1);border:1px solid rgba(10,143,92,.3);color:var(--g);cursor:pointer;border-radius:2px">+C</button></td>
+      <td>${c[1]!=null?'$'+fmt(c[1]):'--'}</td>
+      <td>${c[2]!=null?'$'+fmt(c[2]):'--'}</td>
+      <td>${c[4]!=null?c[4].toFixed(1)+'%':' --'}<span class="iv-bar" style="width:${civW}px"></span></td>
+      <td style="color:var(--t3)">${c[5]||0}</td>
+      <td class="l" style="font-weight:${isATM?700:400};color:${isATM?'var(--cy)':'var(--t1)'}">$${K}</td>
+      <td>${p[1]!=null?'$'+fmt(p[1]):'--'}</td>
+      <td>${p[2]!=null?'$'+fmt(p[2]):'--'}</td>
+      <td>${p[4]!=null?p[4].toFixed(1)+'%':'--'}<span class="iv-bar" style="width:${pivW}px;background:var(--pu)"></span></td>
+      <td style="color:var(--t3)">${p[5]||0}</td>
+      <td style="text-align:center"><button onclick="addLeg('put',${K},'${exp}',${p[1]||0},${p[2]||0},${p[4]||30})" style="font-size:9px;padding:1px 5px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);color:var(--pu);cursor:pointer;border-radius:2px">+P</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addLeg(type,strike,exp,bid,ask,iv){
+  const mid=bid&&ask?(bid+ask)/2:bid||ask||0;
+  // For strategy templates: handle direction automatically
+  let dir='long';
+  if(stStrat==='cc'&&type==='call') dir='short';
+  if(stStrat==='bcs'&&stLegs.filter(l=>l.type==='call').length>=1) dir='short';
+  if(stStrat==='bps'&&stLegs.filter(l=>l.type==='put').length>=1) dir='short';
+  if(stStrat==='ic'){
+    const nc=stLegs.filter(l=>l.type==='call').length;
+    const np=stLegs.filter(l=>l.type==='put').length;
+    if(type==='call') dir=nc===0?'short':'long';
+    else dir=np===0?'short':'long';
+  }
+  if(stStrat==='straddle'||stStrat==='strangle') dir='long';
+  
+  stLegs.push({type,strike,exp,bid,ask,iv:iv||30,mid:parseFloat(mid.toFixed(2)),dir,qty:1});
+  renderLegs();
+  renderPnL();
+  renderMetrics();
+  renderChain(); // refresh selection highlight
+}
+
+function removeLeg(i){
+  stLegs.splice(i,1);
+  renderLegs();renderPnL();renderMetrics();renderChain();
+}
+
+function clearLegs(){
+  stLegs=[];
+  renderLegs();renderPnL();renderMetrics();renderChain();
+}
+
+function reapplyStratDir(){
+  // Reapply the current strategy's direction logic to all existing legs
+  // Re-run addLeg direction logic as if legs were added in order
+  const calls=stLegs.filter(l=>l.type==='call');
+  const puts=stLegs.filter(l=>l.type==='put');
+  calls.forEach((l,i)=>{
+    if(stStrat==='cc') l.dir='short';
+    else if(stStrat==='bcs') l.dir=i===0?'long':'short';
+    else if(stStrat==='ic') l.dir=i===0?'short':'long';
+    else l.dir='long';
+  });
+  puts.forEach((l,i)=>{
+    if(stStrat==='bps') l.dir=i===0?'long':'short';
+    else if(stStrat==='ic') l.dir=i===0?'short':'long';
+    else l.dir='long';
+  });
+  renderLegs();renderPnL();renderMetrics();renderChain();
+}
+
+function pickStrat(el){
+  document.querySelectorAll('.sb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  stStrat=el.dataset.s;
+  // 不清除已有腿位，只更新策略類型和提示
+  const hint = {
+    cc:'切換為 Covered Call 模式 — 之後點 +C 會自動設為 Short',
+    pp:'切換為 Protective Put 模式 — 之後點 +P 會自動設為 Long',
+    bcs:'切換為 Bull Call Spread — 之後第1個 Call=Long，第2個=Short',
+    bps:'切換為 Bear Put Spread — 之後第1個 Put=Long，第2個=Short',
+    straddle:'切換為 Straddle — 之後所有腿均為 Long',
+    strangle:'切換為 Strangle — 之後所有腿均為 Long',
+    ic:'切換為 Iron Condor — 依序：Short C → Long C → Short P → Long P',
+    custom:'自由模式 — 加入後可手動調整方向',
+  };
+  if(!stLegs.length){
+    renderLegs(hint[stStrat]);
+  } else {
+    // Auto-reapply direction to existing legs when strategy changes
+    reapplyStratDir();
+    return; // reapplyStratDir already calls renderLegs/PnL/Metrics/Chain
+  }
+  renderPnL();
+  renderMetrics();
+  renderChain();
+}
+
+function renderLegs(hint){
+  const box=document.getElementById('st-legs'); if(!box)return;
+  if(!stLegs.length){
+    box.innerHTML=`<div style="color:var(--t4);font-size:10px;padding:4px 0">${hint||'點選選擇權鏈中的 +C / +P 加入腿位'}</div>`;
+    return;
+  }
+  // Show reapply button when a named strategy is active
+  const reapplyBtn = stStrat!=='custom' ? `<div style="margin-bottom:6px;padding:5px 8px;background:rgba(0,119,170,.06);border:1px solid rgba(0,119,170,.2);border-radius:3px;display:flex;align-items:center;justify-content:space-between;font-size:9px">
+    <span style="color:var(--t3)">模式: <b style="color:var(--cy)">${stStrat.toUpperCase()}</b> — 現有腿位方向不變</span>
+    <button onclick="reapplyStratDir()" style="font-size:9px;padding:2px 8px;background:rgba(0,119,170,.1);border:1px solid rgba(0,119,170,.3);color:var(--cy);cursor:pointer;border-radius:2px;font-family:var(--font)">重新套用方向</button>
+  </div>` : '';
+  box.innerHTML=reapplyBtn+stLegs.map((l,i)=>{
+    const col=l.type==='call'?'var(--bl)':'var(--pu)';
+    const dirCol=l.dir==='long'?'var(--g)':'var(--r)';
+    return `<div class="leg">
+      <span class="leg-tag" style="color:${col};border-color:${col};background:transparent">${l.type.toUpperCase()[0]} $${l.strike}</span>
+      <span style="color:var(--t3);margin:0 6px;font-size:9px">${l.exp.slice(5)}</span>
+      <span style="color:${dirCol};font-weight:700">${l.dir.toUpperCase()}</span>
+      <span style="margin-left:6px">×${l.qty}</span>
+      <span style="margin-left:auto;color:var(--cy)">$${fmt(l.mid)}</span>
+      <button class="leg-del" style="margin-left:8px" onclick="removeLeg(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// Black-Scholes helpers (already defined as bsPrice/bsGreeks/Φ in main code)
+function bsPx(S,K,T,sig,r,type){
+  if(T<=0) return type==='call'?Math.max(0,S-K):Math.max(0,K-S);
+  const d1=(Math.log(S/K)+(r+.5*sig*sig)*T)/(sig*Math.sqrt(T)),d2=d1-sig*Math.sqrt(T);
+  if(type==='call')return Math.max(0,S*Φ(d1)-K*Math.exp(-r*T)*Φ(d2));
+  return Math.max(0,K*Math.exp(-r*T)*Φ(-d2)-S*Φ(-d1));
+}
+
+function renderPnL(){
+  const cv=document.getElementById('pnlCanvas'); if(!cv)return;
+  const DPR=window.devicePixelRatio||1;
+  const W=cv.parentElement.clientWidth||600, H=220;
+  cv.width=W*DPR; cv.height=H*DPR;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  const ctx=cv.getContext('2d'); ctx.scale(DPR,DPR);
+  ctx.clearRect(0,0,W,H);
+  const C={t3:'#718096',t4:'#a0aec0',g:'#0a8f5c',r:'#d93025',cy:'#0077aa'};
+  if(!stLegs.length){
+    ctx.fillStyle=C.t4;ctx.font='12px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText('請先加入腿位',W/2,H/2);return;
+  }
+  const spot=getSpot();
+  // X range: center on spot, extend to cover all strikes + 15% buffer
+  const strikes=stLegs.map(l=>l.strike);
+  const minK=Math.min(...strikes), maxK=Math.max(...strikes);
+  const spread=Math.max(maxK-minK, spot*0.08);
+  const xLo=Math.min(spot,minK)-spread*0.6;
+  const xHi=Math.max(spot,maxK)+spread*0.6;
+  const steps=200;
+  const xs=[],ys=[];
+  let minY=Infinity,maxY=-Infinity;
+  for(let i=0;i<=steps;i++){
+    const S=xLo+i*(xHi-xLo)/steps;
+    let pnl=0;
+    stLegs.forEach(l=>{
+      const intr=l.type==='call'?Math.max(0,S-l.strike):Math.max(0,l.strike-S);
+      pnl+=(intr-l.mid)*l.qty*100*(l.dir==='long'?1:-1);
+    });
+    xs.push(S);ys.push(pnl);
+    if(pnl<minY)minY=pnl;if(pnl>maxY)maxY=pnl;
+  }
+  // Y range: ensure 0 is visible, add 10% padding
+  const yPad=Math.max(Math.abs(maxY),Math.abs(minY))*0.12||10;
+  minY=Math.min(minY,0)-yPad;
+  maxY=Math.max(maxY,0)+yPad;
+  const padL=68,padR=20,padT=24,padB=36;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  const yRng=maxY-minY;
+  const toX=S=>padL+(S-xLo)/(xHi-xLo)*chartW;
+  const toY=v=>padT+chartH-(v-minY)/yRng*chartH;
+  const zy=toY(0);
+  // Y ticks — pick clean round numbers with min 14px gap
+  const rawAbs=Math.max(Math.abs(maxY),Math.abs(minY));
+  const magnitude=Math.pow(10,Math.floor(Math.log10(rawAbs)));
+  const niceStep=[1,2,2.5,5,10].map(m=>m*magnitude).find(s=>chartH/(yRng/s)>=16)||magnitude*10;
+  const yTicks=[];
+  for(let v=Math.ceil(minY/niceStep)*niceStep; v<=maxY+niceStep*0.01; v+=niceStep){
+    yTicks.push(Math.round(v*100)/100);
+  }
+  // Draw Y grid + labels (skip if too close to previous)
+  let lastLabelY=-99;
+  yTicks.forEach(v=>{
+    const y=toY(v);
+    if(y<padT-2||y>padT+chartH+2)return;
+    if(Math.abs(y-lastLabelY)<13)return; // min gap
+    lastLabelY=y;
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=v>50?C.g:v<-50?C.r:C.t3;
+    ctx.font='9px JetBrains Mono';ctx.textAlign='right';
+    ctx.fillText((v>=0?'+$':'-$')+fmtc(Math.abs(v)),padL-4,y+3);
+  });
+  // Zero line
+  if(zy>=padT&&zy<=padT+chartH){
+    ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(padL,zy);ctx.lineTo(W-padR,zy);ctx.stroke();ctx.setLineDash([]);
+    // Zero label only if not already covered by a tick
+    if(Math.abs(zy-lastLabelY)>=13){
+      ctx.fillStyle=C.t3;ctx.font='9px JetBrains Mono';ctx.textAlign='right';
+      ctx.fillText('$0',padL-4,zy+3);
+    }
+  }
+  // X axis labels — 5 evenly spaced
+  const xTickCount=5;
+  for(let i=0;i<=xTickCount;i++){
+    const S=xLo+i*(xHi-xLo)/xTickCount;
+    const x=toX(S);
+    ctx.fillStyle=C.t4;ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText('$'+Math.round(S),x,H-padB+14);
+    ctx.strokeStyle='rgba(0,0,0,0.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,padT+chartH);ctx.stroke();
+  }
+  // Spot line (vertical)
+  const sx=toX(spot);
+  ctx.strokeStyle='rgba(0,119,170,0.55)';ctx.lineWidth=1.5;ctx.setLineDash([3,4]);
+  ctx.beginPath();ctx.moveTo(sx,padT);ctx.lineTo(sx,padT+chartH);ctx.stroke();ctx.setLineDash([]);
+  // Spot label — left or right of line to avoid edge clipping
+  const spotLabelX=sx+chartW*0.45>W-padR ? sx-4 : sx+4;
+  const spotAlign=sx+chartW*0.45>W-padR ? 'right' : 'left';
+  ctx.fillStyle=C.cy;ctx.font='bold 9px JetBrains Mono';ctx.textAlign=spotAlign;
+  ctx.fillText('現價 $'+fmt(spot),spotLabelX,padT+11);
+  // Strike markers
+  stLegs.forEach(l=>{
+    const kx=toX(l.strike);
+    ctx.strokeStyle=l.type==='call'?'rgba(26,111,204,0.3)':'rgba(124,58,237,0.3)';
+    ctx.lineWidth=1;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(kx,padT);ctx.lineTo(kx,padT+chartH);ctx.stroke();ctx.setLineDash([]);
+  });
+  // Fill zones
+  ctx.save();ctx.beginPath();ctx.rect(padL,padT,chartW,chartH);ctx.clip();
+  ctx.beginPath();ctx.moveTo(toX(xs[0]),zy);
+  xs.forEach((x,i)=>{ctx.lineTo(toX(x),ys[i]>=0?toY(ys[i]):zy);});
+  ctx.lineTo(toX(xs[xs.length-1]),zy);ctx.closePath();
+  ctx.fillStyle='rgba(10,143,92,0.12)';ctx.fill();
+  ctx.beginPath();ctx.moveTo(toX(xs[0]),zy);
+  xs.forEach((x,i)=>{ctx.lineTo(toX(x),ys[i]<0?toY(ys[i]):zy);});
+  ctx.lineTo(toX(xs[xs.length-1]),zy);ctx.closePath();
+  ctx.fillStyle='rgba(217,48,37,0.09)';ctx.fill();
+  // P&L line (colour by sign at spot)
+  const spotIdx=xs.reduce((bi,S,i)=>Math.abs(S-spot)<Math.abs(xs[bi]-spot)?i:bi,0);
+  const lineColor=ys[spotIdx]>=0?C.g:C.r;
+  ctx.beginPath();
+  xs.forEach((x,i)=>{
+    const px=toX(x),py=toY(ys[i]);
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.strokeStyle=lineColor;ctx.lineWidth=2.5;ctx.stroke();
+  ctx.restore();
+  // Legend
+  const legEl=document.getElementById('st-pnl-legend');
+  const cost=stLegs.reduce((s,l)=>s+(l.dir==='long'?l.mid:-l.mid)*l.qty*100,0);
+  if(legEl) legEl.textContent=`淨成本: ${cost>=0?'收$'+fmt(cost)+' (credit)':'付$'+fmt(-cost)+' (debit)'}`;
+}
+
+function renderMetrics(){
+  const box=document.getElementById('st-metrics'); if(!box)return;
+  if(!stLegs.length){box.innerHTML='<div style="color:var(--t4);font-size:10px">請先選擇腿位</div>';return;}
+  
+  const spot=getSpot();
+  // Compute at-expiry P&L across range
+  const rng=spot*0.4; const steps=200;
+  let maxP=-Infinity, maxL=Infinity, be=[];
+  let prevPnl=null;
+  for(let i=0;i<=steps;i++){
+    const S=spot-rng+i*(rng*2/steps);
+    let pnl=0;
+    stLegs.forEach(l=>{
+      const intrinsic=l.type==='call'?Math.max(0,S-l.strike):Math.max(0,l.strike-S);
+      pnl+=(intrinsic-l.mid)*l.qty*100*(l.dir==='long'?1:-1);
+    });
+    if(pnl>maxP)maxP=pnl;
+    if(pnl<maxL)maxL=pnl;
+    if(prevPnl!==null&&Math.sign(prevPnl)!==Math.sign(pnl)){
+      be.push(S);
+    }
+    prevPnl=pnl;
+  }
+  
+  const cost=stLegs.reduce((s,l)=>s+(l.dir==='long'?l.mid:-l.mid)*l.qty*100,0);
+  const maxPStr=maxP===Infinity||maxP>999999?'無限':'+$'+fmtc(maxP);
+  const maxLStr=maxL===-Infinity||maxL<-999999?'無限':'-$'+fmtc(Math.abs(maxL));
+  const rr=maxL!==0?Math.abs(maxP/maxL):Infinity;
+  
+  box.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <div style="padding:6px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:3px">
+        <div style="font-size:8px;color:var(--t4);letter-spacing:.8px;margin-bottom:2px">最大獲利</div>
+        <div style="font-size:13px;font-weight:700;color:var(--g)">${maxPStr}</div>
+      </div>
+      <div style="padding:6px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:3px">
+        <div style="font-size:8px;color:var(--t4);letter-spacing:.8px;margin-bottom:2px">最大虧損</div>
+        <div style="font-size:13px;font-weight:700;color:var(--r)">${maxLStr}</div>
+      </div>
+      <div style="padding:6px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:3px">
+        <div style="font-size:8px;color:var(--t4);letter-spacing:.8px;margin-bottom:2px">淨權利金</div>
+        <div style="font-size:13px;font-weight:700;color:${cost>=0?'var(--r)':'var(--g)'}">
+          ${cost>=0?'收'+fmt(cost)+'（淨空）':'付'+fmt(-cost)+'（淨多）'}
+        </div>
+      </div>
+      <div style="padding:6px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:3px">
+        <div style="font-size:8px;color:var(--t4);letter-spacing:.8px;margin-bottom:2px">損益兩平</div>
+        <div style="font-size:11px;font-weight:700;color:var(--cy)">${be.length?be.map(v=>'$'+fmt(v)).join(' / '):'N/A'}</div>
+      </div>
+    </div>
+    <div style="margin-top:6px;padding:5px 8px;background:var(--s2);border:1px solid var(--b1);border-radius:3px;display:flex;justify-content:space-between">
+      <span style="font-size:8px;color:var(--t4)">風報比 (Max P / Max L)</span>
+      <span style="font-size:11px;font-weight:700;color:var(--cy)">${isFinite(rr)?fmt(rr,2)+'x':'∞'}</span>
+    </div>`;
+}
+
+function renderHV(){
+  const cv=document.getElementById('hvCanvas');if(!cv)return;
+  const hp=MARKET_DATA.hp[stSym];if(!hp||!hp.hv.length)return;
+  const DPR=window.devicePixelRatio||1;
+  const W=cv.parentElement.clientWidth||300, H=160;
+  cv.width=W*DPR;cv.height=H*DPR;
+  cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');ctx.scale(DPR,DPR);
+  ctx.clearRect(0,0,W,H);
+  const C={t3:'#718096',t4:'#a0aec0',cy:'#0077aa'};
+  const hvs=hp.hv;
+  const padL=36,padR=12,padT=16,padB=20;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  const mn=Math.floor(Math.min(...hvs)-2), mx=Math.ceil(Math.max(...hvs)+2);
+  const rng=mx-mn;
+  const toX=i=>padL+(i/(hvs.length-1))*chartW;
+  const toY=v=>padT+chartH-(v-mn)/rng*chartH;
+  // Y ticks
+  const step=Math.ceil(rng/4/5)*5;
+  for(let v=Math.ceil(mn/step)*step;v<=mx;v+=step){
+    const y=toY(v);
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=1;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=C.t4;ctx.font='9px JetBrains Mono';ctx.textAlign='right';
+    ctx.fillText(v+'%',padL-3,y+3);
+  }
+  // X date labels
+  const xSteps=4;
+  const dates=hp.d;
+  for(let i=0;i<=xSteps;i++){
+    const idx=Math.round(i*(hvs.length-1)/xSteps);
+    // Align with hv series offset (hv starts at index 21 in prices, but we aligned it)
+    const di=Math.min(idx,dates.length-1);
+    const x=toX(idx);
+    ctx.fillStyle=C.t4;ctx.font='8px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText(dates[di]?dates[di].slice(5):'',x,H-3);
+  }
+  // IV reference line
+  const iv=getIV()*100;
+  if(iv>=mn&&iv<=mx){
+    const ivy=toY(iv);
+    ctx.strokeStyle='rgba(0,119,170,0.6)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(padL,ivy);ctx.lineTo(W-padR,ivy);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=C.cy;ctx.font='bold 9px JetBrains Mono';ctx.textAlign='left';
+    ctx.fillText('IV '+Math.round(iv)+'%',padL+3,ivy-3);
+  }
+  // HV fill
+  ctx.save();ctx.beginPath();ctx.rect(padL,padT,chartW,chartH);ctx.clip();
+  ctx.beginPath();ctx.moveTo(toX(0),toY(mn));
+  hvs.forEach((v,i)=>ctx.lineTo(toX(i),toY(v)));
+  ctx.lineTo(toX(hvs.length-1),toY(mn));ctx.closePath();
+  ctx.fillStyle='rgba(255,171,0,0.12)';ctx.fill();
+  // HV line
+  ctx.beginPath();
+  hvs.forEach((v,i)=>i?ctx.lineTo(toX(i),toY(v)):ctx.moveTo(toX(0),toY(v)));
+  ctx.strokeStyle='#e08800';ctx.lineWidth=2;ctx.stroke();
+  ctx.restore();
+  // Last HV label
+  const last=hvs[hvs.length-1];
+  ctx.fillStyle='#e08800';ctx.font='bold 9px JetBrains Mono';ctx.textAlign='right';
+  ctx.fillText('HV21 '+last+'%',W-padR,padT-3);
+}
+
+function renderSkew(){
+  const cv=document.getElementById('skewCanvas');if(!cv)return;
+  const DPR=window.devicePixelRatio||1;
+  const W=cv.parentElement.clientWidth||300, H=160;
+  cv.width=W*DPR;cv.height=H*DPR;
+  cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');ctx.scale(DPR,DPR);
+  ctx.clearRect(0,0,W,H);
+  const C={t4:'#a0aec0',t3:'#718096',bl:'#1a6fcc',pu:'#7c3aed',cy:'#0077aa'};
+  const ed=getExpData();if(!ed)return;
+  const {data}=ed;
+  const cPts=data.calls.filter(c=>c[4]!=null).sort((a,b)=>a[0]-b[0]);
+  const pPts=data.puts.filter(p=>p[4]!=null).sort((a,b)=>a[0]-b[0]);
+  const allPts=[...cPts,...pPts];
+  if(!allPts.length){
+    ctx.fillStyle=C.t4;ctx.font='10px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText('無 IV 資料',W/2,H/2);return;
+  }
+  const allK=allPts.map(p=>p[0]);
+  const allIV=allPts.map(p=>p[4]);
+  const minK=Math.min(...allK),maxK=Math.max(...allK);
+  const minIV=Math.floor(Math.min(...allIV)-1),maxIV=Math.ceil(Math.max(...allIV)+1);
+  const ivRng=maxIV-minIV||1;
+  const padL=36,padR=12,padT=20,padB=24;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
+  const toX=K=>padL+(K-minK)/(maxK-minK||1)*chartW;
+  const toY=v=>padT+chartH-(v-minIV)/ivRng*chartH;
+  // Y ticks
+  const ystep=Math.ceil(ivRng/4/5)*5||5;
+  for(let v=Math.ceil(minIV/ystep)*ystep;v<=maxIV;v+=ystep){
+    const y=toY(v);
+    ctx.strokeStyle='rgba(0,0,0,0.06)';ctx.lineWidth=1;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=C.t4;ctx.font='9px JetBrains Mono';ctx.textAlign='right';
+    ctx.fillText(v+'%',padL-3,y+3);
+  }
+  // X strike labels
+  allK.forEach(K=>{
+    const x=toX(K);
+    ctx.fillStyle=C.t4;ctx.font='8px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText('$'+K,x,H-4);
+  });
+  // Spot line
+  const spot=getSpot();
+  if(spot>=minK&&spot<=maxK){
+    const sx=toX(spot);
+    ctx.strokeStyle='rgba(0,119,170,0.5)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(sx,padT);ctx.lineTo(sx,padT+chartH);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=C.cy;ctx.font='8px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText('S',sx,padT-4);
+  }
+  ctx.save();ctx.beginPath();ctx.rect(padL,padT,chartW,chartH);ctx.clip();
+  // Draw call line
+  if(cPts.length>=2){
+    ctx.beginPath();cPts.forEach((c,i)=>i?ctx.lineTo(toX(c[0]),toY(c[4])):ctx.moveTo(toX(c[0]),toY(c[4])));
+    ctx.strokeStyle=C.bl;ctx.lineWidth=2;ctx.stroke();
+  }
+  // Draw put line
+  if(pPts.length>=2){
+    ctx.beginPath();pPts.forEach((p,i)=>i?ctx.lineTo(toX(p[0]),toY(p[4])):ctx.moveTo(toX(p[0]),toY(p[4])));
+    ctx.strokeStyle=C.pu;ctx.lineWidth=2;ctx.stroke();
+  }
+  // Dots
+  cPts.forEach(c=>{ctx.beginPath();ctx.arc(toX(c[0]),toY(c[4]),3.5,0,Math.PI*2);ctx.fillStyle=C.bl;ctx.fill();});
+  pPts.forEach(p=>{ctx.beginPath();ctx.arc(toX(p[0]),toY(p[4]),3.5,0,Math.PI*2);ctx.fillStyle=C.pu;ctx.fill();});
+  ctx.restore();
+  // Legend
+  ctx.fillStyle=C.bl;ctx.font='bold 9px JetBrains Mono';ctx.textAlign='left';ctx.fillText('▬ Call',padL+2,12);
+  ctx.fillStyle=C.pu;ctx.fillText('▬ Put',padL+44,12);
+}
+
+function addToPortfolio(){
+  if(!stLegs.length){alert('請先加入腿位');return;}
+  const isTW=false; // US stocks only for now
+  const isOpen=marketState.nyse;
+  if(!isOpen){alert('NYSE 目前收盤，無法建倉');return;}
+  stLegs.forEach(l=>{
+    const avg=l.mid||l.bid||0;
+    options_p.push({und:stSym,type:l.type,dir:l.dir,strike:l.strike,expiry:l.exp,qty:l.qty,avgPx:avg,iv:l.iv});
+    logTrade({sym:stSym,type:'option',action:'開倉（策略）',dir:l.dir,qty:l.qty,entryPx:avg,optType:l.type,strike:l.strike,expiry:l.exp,ccy:'USD'});
+  });
+  saveAll(); renderOptions(); updateBook();
+  alert(`已加入 ${stLegs.length} 個腿位到選擇權部位`);
+  clearLegs();
+}
+
+// ═══════════════════════════════════════════
+// EXPOSE FUNCTIONS TO GLOBAL SCOPE
+// (required because script is type="module")
+// ═══════════════════════════════════════════
+window.go            = go;
+window.openModal     = openModal;
+window.closeModal    = closeModal;
+window.saveModal     = saveModal;
+window.closePos      = closePos;
+window.delPos        = delPos;
+window.delOpt        = delOpt;
+window.addLeg        = addLeg;
+window.addToPortfolio= addToPortfolio;
+window.clearLegs     = clearLegs;
+window.pickStrat     = pickStrat;
+window.reapplyStratDir = reapplyStratDir;
+window.removeLeg     = removeLeg;
+window.onStSym       = onStSym;
+window.onStIV        = onStIV;
+window.initStratPage = initStratPage;
+window.renderExpTabs = renderExpTabs;
+window.setExpIdx     = setExpIdx;
+
+// Clear all old localStorage data (migrated to Firestore)
+Object.keys(localStorage).filter(k=>k.startsWith('td3_')).forEach(k=>localStorage.removeItem(k));
+
+</script>
+</body>
+</html>
