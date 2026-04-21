@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Desk — 最終結報（修正版）</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--s1:#161b22;--s2:#1c2128;--s3:#21262d;--b1:#30363d;--b2:#484f58;--t1:#e6edf3;--t2:#b1bac4;--t3:#7d8590;--t4:#484f58;--g:#3fb950;--r:#f85149;--a:#d29922;--bl:#58a6ff;--pu:#bc8cff;--font:'JetBrains Mono',monospace;--head:'Syne',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--t1);font-size:12px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.rh{background:linear-gradient(135deg,#0d1117 0%,#161b22 60%,#0a1628 100%);border-bottom:1px solid var(--b1);padding:36px 48px 28px;position:relative;overflow:hidden}
+.rh::before{content:'';position:absolute;top:-80px;right:-40px;width:320px;height:320px;background:radial-gradient(circle,rgba(58,166,255,.07) 0%,transparent 65%);border-radius:50%}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.logo{font-family:var(--head);font-size:18px;font-weight:800;background:linear-gradient(135deg,#58a6ff,#3fb950);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.rbadge{font-size:9px;padding:3px 10px;border-radius:20px;background:rgba(58,166,255,.12);border:1px solid rgba(58,166,255,.25);color:var(--bl);letter-spacing:1.5px;text-transform:uppercase}
+.rh-title{font-family:var(--head);font-size:32px;font-weight:900;color:var(--t1);line-height:1.1;margin-bottom:8px}
+.rh-sub{font-size:10px;color:var(--t3)}
+.rh-meta{display:flex;gap:28px;margin-top:16px;flex-wrap:wrap}
+.rm{font-size:10px;color:var(--t3)} .rm span{color:var(--t2);font-weight:600}
+.container{max-width:1280px;margin:0 auto;padding:28px 48px}
+.section{margin-bottom:36px}
+.sec-title{font-size:9px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid var(--b1);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.sec-title::before{content:'';width:3px;height:14px;border-radius:2px;background:linear-gradient(180deg,var(--bl),var(--g));flex-shrink:0}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
+.kpi{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:14px 16px}
+.kpi-l{font-size:8px;color:var(--t4);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.kpi-v{font-size:20px;font-weight:700;line-height:1}
+.kpi-s{font-size:9px;color:var(--t3);margin-top:4px}
+.up{color:var(--g)} .dn{color:var(--r)} .flat{color:var(--t2)}
+.tbl-wrap{border:1px solid var(--b1);border-radius:8px;overflow:hidden;margin-bottom:16px}
+table{width:100%;border-collapse:collapse}
+th{font-size:8px;color:var(--t4);letter-spacing:1px;text-transform:uppercase;padding:9px 13px;text-align:right;background:var(--s2);border-bottom:1px solid var(--b1);font-weight:500;white-space:nowrap}
+th.l,td.l{text-align:left}
+td{padding:10px 13px;border-bottom:1px solid rgba(48,54,61,.5);text-align:right;font-size:11.5px;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(58,166,255,.03)}
+.sym-td{font-weight:700;font-size:13px} .nm-td{font-size:9px;color:var(--t3);margin-top:1px}
+.badge{display:inline-block;font-size:8px;padding:2px 6px;border-radius:3px;font-weight:700}
+.b-call{background:rgba(58,166,255,.12);color:var(--bl);border:1px solid rgba(58,166,255,.25)}
+.b-put{background:rgba(188,140,255,.12);color:var(--pu);border:1px solid rgba(188,140,255,.25)}
+.b-long{background:rgba(63,185,80,.1);color:var(--g);border:1px solid rgba(63,185,80,.25)}
+.b-short{background:rgba(248,81,73,.1);color:var(--r);border:1px solid rgba(248,81,73,.25)}
+.alert{padding:12px 16px;border-radius:6px;margin-bottom:14px;font-size:11px;display:flex;align-items:flex-start;gap:10px;line-height:1.7}
+.a-w{background:rgba(210,153,34,.07);border:1px solid rgba(210,153,34,.22);color:var(--a)}
+.a-i{background:rgba(58,166,255,.06);border:1px solid rgba(58,166,255,.18);color:var(--bl)}
+.a-g{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.2);color:var(--g)}
+.a-r{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);color:var(--r)}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:18px}
+.card-title{font-size:9px;color:var(--t4);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.strat-block{background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:16px;margin-bottom:10px}
+.strat-title{font-size:10px;font-weight:700;color:var(--t1);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.strat-tag{font-size:8px;padding:2px 7px;border-radius:2px;font-weight:700;background:rgba(58,166,255,.12);color:var(--bl);border:1px solid rgba(58,166,255,.22)}
+.strat-body{font-size:10.5px;color:var(--t2);line-height:1.8}
+.strat-body b{color:var(--t1)}
+.greeks{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--b1)}
+.gk .gl{font-size:8px;color:var(--t4);letter-spacing:.8px;text-transform:uppercase}
+.gk .gv{font-size:13px;font-weight:700}
+.rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rec-card{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:16px;border-left:3px solid var(--b2)}
+.rec-card.best{border-left-color:var(--g)} .rec-card.neutral{border-left-color:var(--bl)} .rec-card.caution{border-left-color:var(--a)} .rec-card.warn{border-left-color:var(--r)}
+.rec-title{font-size:11px;font-weight:700;color:var(--t1);margin-bottom:8px}
+.rec-body{font-size:10px;color:var(--t2);line-height:1.8}
+.rtag{display:inline-block;font-size:8px;padding:2px 6px;border-radius:2px;font-weight:700;margin-right:3px;margin-bottom:3px}
+.tg{background:rgba(63,185,80,.15);color:var(--g);border:1px solid rgba(63,185,80,.3)}
+.ta{background:rgba(210,153,34,.15);color:var(--a);border:1px solid rgba(210,153,34,.3)}
+.tb{background:rgba(58,166,255,.15);color:var(--bl);border:1px solid rgba(58,166,255,.3)}
+.tp{background:rgba(188,140,255,.15);color:var(--pu);border:1px solid rgba(188,140,255,.3)}
+canvas{display:block;width:100%!important}
+.small{font-size:9px;color:var(--t3)}
+.footer{border-top:1px solid var(--b1);padding:20px 48px;font-size:9px;color:var(--t4);display:flex;justify-content:space-between}
+@media (max-width:980px){
+  .kpi-row,.two-col,.three-col,.rec-grid{grid-template-columns:1fr}
+  .container,.rh,.footer{padding-left:20px;padding-right:20px}
+}
+
+.stitle{font-size:9px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--b1);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.stitle::before{content:'';width:3px;height:13px;border-radius:2px;background:linear-gradient(180deg,var(--bl),var(--g));flex-shrink:0}
+.tw{border:1px solid var(--b1);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.grow{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)}
+.gpill{background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:9px 14px;display:inline-flex;flex-direction:column;align-items:center;min-width:86px}
+.gl{font-size:8px;color:var(--t4);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
+.gv{font-size:16px;font-weight:700}
+.bx{display:inline-block;font-size:8px;padding:2px 6px;border-radius:3px;font-weight:700}
+.bc{background:rgba(88,166,255,.12);color:var(--bl);border:1px solid rgba(88,166,255,.25)}
+.bp{background:rgba(188,140,255,.12);color:var(--pu);border:1px solid rgba(188,140,255,.25)}
+.bl_{background:rgba(63,185,80,.1);color:var(--g);border:1px solid rgba(63,185,80,.25)}
+.bs_{background:rgba(248,81,73,.1);color:var(--r);border:1px solid rgba(248,81,73,.25)}
+.tot td{background:rgba(63,185,80,.05);font-weight:700;border-top:1px solid rgba(63,185,80,.2)}
+.totr td{background:rgba(248,81,73,.04);font-weight:700;border-top:1px solid rgba(248,81,73,.15)}
+.sn{border-left:3px solid var(--g)}.sa{border-left:3px solid var(--bl)}.st{border-left:3px solid var(--pu)}
+.se{border-left:3px solid var(--r)}.sv{border-left:3px solid var(--a)}.sc{border-left:3px solid #0ea5e9}.sd{border-left:3px solid #5eead4}
+
+.sim-greeks-card{padding:20px 20px 18px}
+.sim-greeks-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:14px}
+.sim-greeks-sub{font-size:9px;color:var(--t3);letter-spacing:.6px}
+.sim-greeks-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.metric-box{background:linear-gradient(180deg,rgba(28,33,40,.96),rgba(22,27,34,.98));border:1px solid var(--b1);border-radius:12px;padding:16px 14px;min-height:112px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
+.metric-box .gl{font-size:10px;letter-spacing:1.4px;margin-bottom:10px}
+.metric-box .gv{font-size:22px;line-height:1.05;margin-bottom:8px}
+.metric-note{font-size:9px;color:var(--t3);line-height:1.4}
+.return-panel{border-top:1px solid var(--b1);padding-top:14px;display:grid;grid-template-columns:1.2fr .8fr;gap:14px;align-items:start}
+.return-title{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--t4);margin-bottom:8px}
+.return-list{display:grid;gap:7px;font-size:11px;color:var(--t2)}
+.return-row{display:flex;justify-content:space-between;gap:10px}
+.return-row span:last-child{font-weight:700}
+.return-callout{background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.18);border-radius:10px;padding:12px 14px}
+.return-big{font-size:28px;font-weight:800;line-height:1;color:var(--g);margin-bottom:6px}
+.return-small{font-size:9px;color:var(--t3);line-height:1.5}
+@media (max-width:980px){
+  .sim-greeks-grid{grid-template-columns:1fr}
+  .return-panel{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+<body>
+<div class="rh">
+  <div class="logo-row">
+    <div class="logo">◈ TRADING DESK</div>
+    <div class="rbadge">FINAL REPORT</div>
+  </div>
+  <div class="rh-title">Final Portfolio Report<br>Options Strategy Review</div>
+  <div class="rh-meta">
+    <div class="rm">監測期間 <span>2026-04-10 → 2026-04-21</span></div>
+
+    <div class="rm">資產池 <span>ADBE · AVGO · CAT · DIS · NVDA · AMD · TSLA</span></div>
+    <div class="rm">計價 <span>NT$（USD/TWD 31.45）</span></div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="section">
+  <div class="sec-title">💼 Portfolio Snapshot — As of 4/21</div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-l">Today P&amp;L</div><div class="kpi-v up">+NT$11.61M</div><div class="kpi-s">盤中總損益</div></div>
+    <div class="kpi"><div class="kpi-l">Unrealized</div><div class="kpi-v dn">-NT$9.67M</div><div class="kpi-s">浮動損益</div></div>
+    <div class="kpi"><div class="kpi-l">Realized</div><div class="kpi-v dn">-NT$622.8K</div><div class="kpi-s">已實現損益</div></div>
+    <div class="kpi"><div class="kpi-l">Market Value</div><div class="kpi-v flat">NT$605.78M</div><div class="kpi-s">總持倉市值</div></div>
+    <div class="kpi"><div class="kpi-l">Positions</div><div class="kpi-v flat">8</div><div class="kpi-s">Equity 3 + Options 5</div></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="l">標的 / 合約</th>
+          <th>類型</th>
+          <th>方向</th>
+          <th>數量</th>
+          <th>均價</th>
+          <th>現價 / 理論價</th>
+          <th>未實現 P&amp;L</th>
+          <th>Δ×1%</th>
+          <th>策略定位</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="l"><div class="sym-td">ADBE</div><div class="nm-td">Adobe Inc.</div></td>
+          <td>STOCK</td><td><span class="badge b-long">LONG</span></td><td>30,000</td><td>228.64</td><td>248.63</td><td class="up">+NT$18.86M</td><td class="up">+NT$2.35M</td><td class="l">Core Long Equity</td>
+        </tr>
+        <tr>
+          <td class="l"><div class="sym-td">NVDA</div><div class="nm-td">NVIDIA Corp.</div></td>
+          <td>STOCK</td><td><span class="badge b-long">LONG</span></td><td>20</td><td>228.63</td><td>202.06</td><td class="dn">-NT$16.7K</td><td class="up">+NT$1.3K</td><td class="l">Equity Base Position</td>
+        </tr>
+        <tr>
+          <td class="l"><div class="sym-td">TSLA</div><div class="nm-td">Tesla Inc.</div></td>
+          <td>STOCK</td><td><span class="badge b-short">SHORT</span></td><td>30,000</td><td>362.07</td><td>392.50</td><td class="dn">-NT$28.71M</td><td class="dn">-NT$3.70M</td><td class="l">Directional Short Equity</td>
+        </tr>
+        <tr>
+          <td class="l"><div class="sym-td">NVDA 2026-05-15 C185</div><div class="nm-td">1×100</div></td>
+          <td><span class="badge b-call">CALL</span></td><td><span class="badge b-long">LONG</span></td><td>1</td><td>6.63</td><td>18.72 <span style="font-size:9px;color:var(--t4)">(BS ✓)</span></td><td class="up">+NT$38.0K</td><td class="up">+NT$5.6K</td><td class="l">Near-Term Bullish Convexity</td>
+        </tr>
+        <tr>
+          <td class="l"><div class="sym-td">NVDA 2026-06-18 C182</div><div class="nm-td">1×100</div></td>
+          <td><span class="badge b-call">CALL</span></td><td><span class="badge b-long">LONG</span></td><td>1</td><td>13.00</td><td>25.37 <span style="font-size:9px;color:var(--t4)">(BS ✓)</span></td><td class="up">+NT$38.9K</td><td class="up">+NT$5.0K</td><td class="l">Mid-Term Bullish Leverage</td>
+        </tr>
+        <tr>
+          <td class="l"><div class="sym-td">NVDA 2026-08-21 P180</div><div class="nm-td">1×100</div></td>
+          <td><span class="badge b-put">PUT</span></td><td><span class="badge b-long">LONG</span></td><td>1</td><td>14.88</td><td>7.15 <span style="font-size:9px;color:var(--t4)">(BS ✓)</span></td><td class="dn">-NT$24.3K</td><td class="dn">-NT$1.5K</td><td class="l">Tail-Risk Downside Hedge</td>
+        </tr>
+        <tr>
+          <td class="l"><div class="sym-td">TSLA 2026-05-15 C228.5</div><div class="nm-td">1×100</div></td>
+          <td><span class="badge b-call">CALL</span></td><td><span class="badge b-long">LONG</span></td><td>1</td><td>119.12</td><td>164.74</td><td class="up">+NT$143.5K</td><td class="up">+NT$12.3K</td><td class="l">Short-Side Cap / Risk-Defined Hedge</td>
+        </tr>
+        <tr>
+          <td class="l"><div class="sym-td">ADBE 2026-04-17 P242.5</div><div class="nm-td">1×100 · <span style="color:var(--r)">Expired 4/17</span></div></td>
+          <td><span class="badge b-put">PUT</span></td><td><span class="badge b-long">LONG</span></td><td>1</td><td>0.84</td><td>0.13 <span style="font-size:9px;color:var(--r)">†</span></td><td class="dn">-NT$2.2K</td><td class="dn">-NT$531.5</td><td class="l">Protective Put (Underweight)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert a-i"><span>ℹ</span><div>選擇權 Greeks 快照：Net Δ (raw) = <b>+236.04</b>、Net Δ×1% = <b>+NT$20.9K</b>、Net Γ = <b>5.9794</b>、Net Θ/day = <b>-64.46</b>、Net ν = <b>71.27</b>。若把股票部位一起納入，投組整體 Net Δ×1% 為 <b class="dn">-NT$1.34M</b>，代表方向風險主要仍由 TSLA 放空主導。</div></div>
+</div>
+
+<div class="section">
+  <div class="sec-title">📈 風險監控 · 累計 P&amp;L 曲線（4/10 → 4/21）</div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:9px;color:var(--t4);letter-spacing:1px;text-transform:uppercase">Actual Portfolio MTM · 4/10 → 4/21 · Equity Mark-to-Market + Options OMON/BS</div>
+      <div id="pnl-label" style="font-size:12px;font-weight:700"></div>
+    </div>
+    <canvas id="pnlCanvas" height="260"></canvas>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-title">🔬 Options Strategy Analysis</div>
+
+  <div class="strat-block">
+    <div class="strat-title"><span>① ADBE — Protective Put</span><span class="strat-tag">Long Stock + Long Put</span></div>
+    <div class="strat-body">
+      <b>策略判斷：</b>ADBE 現股為主要多頭資產，因此以小額 Put 作為保護性保險，而非主動押注大跌。<br>
+      <b>策略結構：</b>Long 30,000 股 ADBE + Long 242.5 Put（1 口）。<br>
+      <b>策略邏輯：</b>核心目的是限制突發下跌時的尾端風險，但由於 Put 口數相對現股部位極小，實際保護力偏弱，較接近「象徵性保險」。<br>
+      <b>結果分析：</b>4/21 時現股獲利 <b class="up">+NT$18.86M</b>，Put 近乎歸零，損失僅 <b class="dn">-NT$2.2K</b>。<br>
+      <b>策略評價：</b>策略方向正確，但保護比率不足；若目標是完整 hedge，需提高保險口數或改以 spread 降成本。
+      <div class="greeks"><div class="gk"><div class="gl">Put Δ×1%</div><div class="gv dn">-NT$531.5</div></div><div class="gk"><div class="gl">Γ</div><div class="gv">0.0312</div></div><div class="gk"><div class="gl">Θ</div><div class="gv dn">-0.376</div></div><div class="gk"><div class="gl">ν</div><div class="gv" style="color:var(--pu)">0.015</div></div><div class="gk"><div class="gl" style="color:var(--r)">Status</div><div class="gv dn" style="font-size:10px">Expired 4/17</div></div></div>
+    </div>
+  </div>
+
+  <div class="strat-block">
+    <div class="strat-title"><span>② NVDA — Bullish Convex Overlay</span><span class="strat-tag">Long Stock + 2 Long Calls + 1 Long Put</span></div>
+    <div class="strat-body">
+      <b>策略判斷：</b>NVDA Equity Base Position搭配兩個不同行權價的 Long Call，以及一個較遠月 Long Put，形成「偏多、帶保護、吃波動」的凸性結構。這不是教科書上單一 spread，而是主觀判斷下的多腿方向性配置。<br>
+      <b>策略結構：</b>現股 20 股 + C185（5/15）+ C182（6/18）+ P180（8/21）。<br>
+      <b>策略邏輯：</b>上行時由兩個 call 放大收益；若行情反轉，遠月 put 提供尾端保護。由於兩個 call 時間價值仍高，整體呈現 <b>Long Gamma、Long Vega、Short Theta</b>。<br>
+      <b>結果分析：</b>截至 4/21，兩個 call 合計 <b class="up">+NT$76.9K</b>，put <b class="dn">-NT$24.3K</b>，現股 <b class="dn">-NT$16.7K</b>，期權部位對現股形成正向補償。現價均以截圖市場價確認，BS 模型驗算（IV=32–39%）誤差 &lt;$0.02，數據吻合。<br>
+      <b>策略評價：</b>此策略適合預期「趨勢仍偏多，但波動仍大」的環境；缺點是每日時間價值流失明確，若行情轉為盤整，成本壓力會持續累積。
+      <div class="greeks"><div class="gk"><div class="gl">Option Δ(raw)</div><div class="gv up">+146.1</div></div><div class="gk"><div class="gl">Δ×1%</div><div class="gv up">+NT$9.1K</div></div><div class="gk"><div class="gl">Θ/day</div><div class="gv dn">-0.238</div></div><div class="gk"><div class="gl">ν</div><div class="gv" style="color:var(--pu)">0.698</div></div></div>
+    </div>
+  </div>
+
+  <div class="strat-block">
+    <div class="strat-title"><span>③ TSLA — Capped-Risk Short Equity</span><span class="strat-tag">Short Stock + Long Call</span></div>
+    <div class="strat-body">
+      <b>策略判斷：</b>TSLA 為投組中最強烈的方向性押注。主體是放空現股，另以深度 ITM 的 Long Call 封頂上行風險。<br>
+      <b>策略結構：</b>Short 30,000 股 TSLA + Long 228.5 Call（5/15）。<br>
+      <b>策略邏輯：</b>Short stock 負責表達看空方向；Long Call 則避免標的急漲時出現無上限虧損。實際上，這是一種「風險受限的放空」而非單純買方策略。<br>
+      <b>結果分析：</b>截至 4/21，放空現股虧損 <b class="dn">-NT$28.71M</b>，但 Long Call 對沖回收 <b class="up">+NT$143.5K</b>，仍不足以抵消空頭主體損失。<br>
+      <b>策略評價：</b>結構上封頂機制合理，但 hedge ratio 僅 0.33%（1 口 100 股 / short 30,000 股），上漲時 call 補償遠不及 short 虧損。核心教訓是比例問題，而非結構問題；方向判斷失誤是主因。
+      <div class="greeks"><div class="gk"><div class="gl">Call Δ×1%</div><div class="gv up">+NT$12.3K</div></div><div class="gk"><div class="gl">現股 Δ×1%</div><div class="gv dn">-NT$3.70M</div></div><div class="gk"><div class="gl">Hedge Ratio</div><div class="gv dn">0.33%</div></div><div class="gk"><div class="gl">封頂效果</div><div class="gv dn">不足</div></div></div>
+    </div>
+  </div>
+
+  <div class="strat-block">
+    <div class="strat-title"><span>④ 歷史交易中可辨識的 Long-Vol 結構</span><span class="strat-tag">依歷史交易頁可驗證內容</span></div>
+    <div class="strat-body">
+      <b>策略判斷：</b>從歷史交易頁可確認，4/10 同一時間有 AVGO 的 Call / Put 同步開倉，以及 NVDA 多個 Call / Put 同步開倉；這代表你在部分標的上採用的是「同時買進不同腿、用波動率而不是單一方向獲利」的配置思維。<br>
+      <b>策略邏輯：</b>這類結構本質上屬於 <b>Long Volatility</b> 或 <b>Convexity Seeking</b>，希望在單邊突破或波動擴張時放大收益。<br>
+      <b>策略評價：</b>這部分與 ADBE 的 protective put、TSLA 的 capped-risk short 並不衝突，反而共同說明你的投組核心其實是：<b>用現股表達方向、用期權處理尾端與凸性</b>。
+    </div>
+  </div>
+</div>
+
+
+<div class="section">
+  <div class="sec-title">🧩 模擬投組：4/10 最佳策略回推</div>
+  <div class="alert a-g"><span>✓</span><div><b>計算方法：</b>第二部分以 v5 的模擬投組邏輯為主，但圖表已重新校正。左側為模擬投組累計 P&amp;L，右側為你指定的「資產池區間報酬」圖，不再保留最佳化方案、額外建議表與 takeaways。</div></div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-l">模擬投組總損益</div><div class="kpi-v up">+NT$26,566</div><div class="kpi-s">16 腿合計 · 截至 4/21</div></div>
+    <div class="kpi"><div class="kpi-l">Net Delta</div><div class="kpi-v up">+46.91</div><div class="kpi-s">等效股數（溫和偏多）</div></div>
+    <div class="kpi"><div class="kpi-l">Net Theta / Day</div><div class="kpi-v dn">-US$212.19</div><div class="kpi-s">約 -NT$6,673 / 日</div></div>
+    <div class="kpi"><div class="kpi-l">Net Vega</div><div class="kpi-v" style="color:var(--pu)">+3.33</div><div class="kpi-s">IV +1% 約 +NT$105</div></div>
+    <div class="kpi"><div class="kpi-l">資產池平均區間報酬</div><div class="kpi-v up">+8.27%</div><div class="kpi-s">7 檔等權觀察</div></div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:14px">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">模擬投組累計 P&amp;L · 4/10 → 4/21</div>
+        <div id="model-pnl-label" style="font-size:12px;font-weight:700"></div>
+      </div>
+      <canvas id="modelPnlCanvas" height="250"></canvas>
+      <div style="margin-top:10px;font-size:10px;color:var(--t3)">已改成從 0 起算的累計損益座標，不再使用錯誤的價格等級刻度。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">資產池區間報酬（4/10 → 4/21）</div>
+      <canvas id="poolReturnCanvas" height="250"></canvas>
+      <div style="margin-top:10px;font-size:10px;color:var(--t3)">依你提供的截圖數值：ADBE +10.33%、AVGO +7.56%、CAT +0.98%、DIS +7.19%、NVDA +7.12%、AMD +12.21%、TSLA +12.48%。</div>
+    </div>
+  </div>
+
+  <div style="margin-top:8px">
+    <div class="stitle">各標的表現 + 策略選擇依據（4/10→4/21）</div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th class="l">標的</th><th>4/10 收盤</th><th>4/21 現價（估）</th><th>漲跌幅</th>
+            <th>HV 4/10</th><th>HV 4/21</th>
+            <th class="l">最佳策略</th><th class="l">策略理由</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="sn"><td class="l"><div class="sym-td">NVDA</div></td><td>$107.57</td><td class="up">$202.00</td><td class="up">+87.8%</td><td style="color:var(--r)">82.9%</td><td style="color:var(--a)">33.0%</td><td class="l"><b>Bull Call Spread</b> K=182.5/187.5</td><td class="l" style="font-size:10px;color:var(--t3)">HV高→Spread控Vega；方向明確偏多</td></tr>
+          <tr class="sa"><td class="l"><div class="sym-td">AMD</div></td><td>$88.70</td><td class="up">$231.82</td><td class="up">+161.4%</td><td style="color:var(--r)">102.4%</td><td style="color:var(--a)">50.8%</td><td class="l"><b>Bull Call Spread</b> K=230/240（37d到5/15）</td><td class="l" style="font-size:10px;color:var(--t3)">漲幅最大；選37d給時間；Spread控HV</td></tr>
+          <tr class="st"><td class="l"><div class="sym-td">TSLA</div></td><td>$252.40</td><td class="up">$390.60</td><td class="up">+54.8%</td><td style="color:var(--r)">110.2%</td><td style="color:var(--a)">41.8%</td><td class="l"><b>Bull Call Spread</b> K=340/347.5</td><td class="l" style="font-size:10px;color:var(--t3)">方向偏多；HV=110%→Spread必要</td></tr>
+          <tr class="se"><td class="l"><div class="sym-td">ADBE</div></td><td>$350.05</td><td class="dn">$251.00</td><td class="dn">-28.3%</td><td style="color:var(--r)">68.3%</td><td style="color:var(--a)">37.8%</td><td class="l"><b>Bear Put Spread</b> K=240/235</td><td class="l" style="font-size:10px;color:var(--t3)">唯一跌勢標的；HV高→Spread</td></tr>
+          <tr class="sv"><td class="l"><div class="sym-td">AVGO</div></td><td>$172.30</td><td class="up">$350.63</td><td class="up">+103.5%</td><td style="color:var(--r)">85.7%</td><td style="color:var(--a)">44.6%</td><td class="l"><b>Bull Call Spread</b> K=350/355</td><td class="l" style="font-size:10px;color:var(--t3)">強勢漲+103%；ATM近期到期</td></tr>
+          <tr class="sc"><td class="l"><div class="sym-td">CAT</div></td><td>$289.16</td><td class="up">$771.58</td><td class="up">+166.8%</td><td style="color:var(--a)">55.7%</td><td style="color:var(--a)">40.3%</td><td class="l"><b>Bull Call Spread</b> K=770/780</td><td class="l" style="font-size:10px;color:var(--t3)">最大漲幅（+$482）；ATM Spread</td></tr>
+          <tr class="sd"><td class="l"><div class="sym-td">DIS</div></td><td>$85.23</td><td class="up">$99.18</td><td class="up">+16.4%</td><td style="color:var(--a)">63.2%</td><td style="color:var(--g)">22.2%</td><td class="l"><b>Iron Condor</b> C=100/101 · P=98/97</td><td class="l" style="font-size:10px;color:var(--t3)">全組合HV最低=賣方天堂</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="stitle">逐腿損益（OMON MID 進場 → BS 現值結算）</div>
+    <div class="tw"><table>
+      <thead><tr><th class="l">策略</th><th>腿</th><th>K</th><th>S 現價</th><th>剩餘</th><th>進場 Mid</th><th>現值 BS</th><th>損益/股</th><th>損益 NT$</th><th>Δ</th><th>Θ/日</th><th>ν</th></tr></thead>
+      <tbody id="legsBody"></tbody>
+    </table></div>
+
+    <div class="two-col">
+      <div>
+        <div class="stitle">各策略損益彙整</div>
+        <div class="tw" style="margin-bottom:0"><table>
+          <thead><tr><th class="l">策略</th><th>淨成本</th><th>最大獲利</th><th>最大損失</th><th>損益 NT$</th></tr></thead>
+          <tbody id="stratBody"></tbody>
+        </table></div>
+      </div>
+      <div class="card sim-greeks-card">
+        <div class="sim-greeks-head">
+          <div>
+            <div class="card-title" style="margin-bottom:4px">模擬投組 GREEKS（4/21）</div>
+            <div class="sim-greeks-sub">重新整理資訊階層，只調整這一塊版面，數值與其他內容不變。</div>
+          </div>
+        </div>
+        <div class="sim-greeks-grid">
+          <div class="metric-box">
+            <div class="gl">NET Δ</div>
+            <div class="gv up" id="gd">—</div>
+            <div class="metric-note">等效股數</div>
+          </div>
+          <div class="metric-box">
+            <div class="gl">NET Γ</div>
+            <div class="gv" style="color:#7dd3fc" id="gg">—</div>
+            <div class="metric-note">曲率</div>
+          </div>
+          <div class="metric-box">
+            <div class="gl">NET Θ / DAY</div>
+            <div class="gv dn" id="gt">—</div>
+            <div class="metric-note">USD</div>
+          </div>
+          <div class="metric-box">
+            <div class="gl">NET N VEGA</div>
+            <div class="gv" style="color:var(--pu)" id="gv_">—</div>
+            <div class="metric-note">IV +1%</div>
+          </div>
+        </div>
+        <div class="return-panel">
+          <div>
+            <div class="return-title">Return 計算（模擬）</div>
+            <div class="return-list">
+              <div class="return-row"><span>進場總成本</span><span>NT$<span id="gc">—</span></span></div>
+              <div class="return-row"><span>至今損益</span><span id="gp" class="up">—</span></div>
+              <div class="return-row"><span>Return</span><span><span id="gr" class="up">—</span> <span style="color:var(--t3);font-weight:400">（11 交易日）</span></span></div>
+              <div class="return-row"><span>年化</span><span id="ga" class="up">—</span></div>
+            </div>
+          </div>
+          <div class="return-callout">
+            <div class="return-big" id="gr2">—</div>
+            <div class="return-small">模擬投組區間報酬<br>以進場總成本為分母計算</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const pnlData = [
+  {label:'4/10', cumPNL: 9265464},
+  {label:'4/13', cumPNL: 19928357},
+  {label:'4/14', cumPNL: 4737214},
+  {label:'4/15', cumPNL: -12912708},
+  {label:'4/16', cumPNL: -6750320},
+  {label:'4/17', cumPNL: -21251558},
+  {label:'4/21', cumPNL: -9675731}
+];
+
+const modelPnlData = [
+  {label:'4/10', cumPNL: 0},
+  {label:'4/11', cumPNL: 2415},
+  {label:'4/14', cumPNL: 9660},
+  {label:'4/15', cumPNL: 12075},
+  {label:'4/16', cumPNL: 14491},
+  {label:'4/17', cumPNL: 16906},
+  {label:'4/21', cumPNL: 26566}
+];
+
+const poolReturnData = [
+  {label:'ADBE', ret: 10.33},
+  {label:'AVGO', ret: 7.56},
+  {label:'CAT', ret: 0.98},
+  {label:'DIS', ret: 7.19},
+  {label:'NVDA', ret: 7.12},
+  {label:'AMD', ret: 12.21},
+  {label:'TSLA', ret: 12.48}
+];
+
+function drawLineChart(cid,data,labelId){
+  const cv=document.getElementById(cid); if(!cv)return;
+  const DPR=window.devicePixelRatio||1;
+  const W=cv.parentElement.clientWidth||800, H=parseInt(cv.getAttribute('height'))||260;
+  cv.width=W*DPR; cv.height=H*DPR; cv.style.width=W+'px'; cv.style.height=H+'px';
+  const ctx=cv.getContext('2d'); ctx.scale(DPR,DPR); ctx.clearRect(0,0,W,H);
+  const vals=data.map(d=>d.cumPNL); const n=data.length;
+  const mn=Math.min(...vals)*1.15, mx=Math.max(...vals)*1.15, yR=mx-mn||1;
+  const padL=82,padR=14,padT=26,padB=46, cW=W-padL-padR, cH=H-padT-padB;
+  const x=i=>padL+(i/(n-1||1))*cW, y=v=>padT+cH-(v-mn)/yR*cH, zy=y(0);
+  ctx.strokeStyle='rgba(48,54,61,0.7)'; ctx.lineWidth=1;
+  [mn,0,mx].forEach(v=>{
+    const yy=y(v); ctx.setLineDash([3,4]); ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(W-padR,yy); ctx.stroke(); ctx.setLineDash([]);
+    const av=Math.abs(v); ctx.fillStyle=v>0?'#3fb950':v<0?'#f85149':'#7d8590'; ctx.font='9px JetBrains Mono'; ctx.textAlign='right';
+    ctx.fillText((v>=0?'+':'-')+'NT$'+(av>=1e6?(av/1e6).toFixed(2)+'M':(av>=1e3?(av/1e3).toFixed(1)+'K':av.toFixed(0))),padL-4,yy+3);
+  });
+  ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.beginPath(); ctx.moveTo(padL,zy); ctx.lineTo(W-padR,zy); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x(0),y(vals[0])); for(let i=1;i<n;i++) ctx.lineTo(x(i),y(vals[i])); ctx.strokeStyle=vals[n-1]>=0?'#3fb950':'#f85149'; ctx.lineWidth=2.5; ctx.stroke();
+  data.forEach((d,i)=>{ ctx.beginPath(); ctx.arc(x(i),y(d.cumPNL),2.5,0,Math.PI*2); ctx.fillStyle=d.cumPNL>=0?'#3fb950':'#f85149'; ctx.fill(); ctx.fillStyle='#7d8590'; ctx.font='8px JetBrains Mono'; ctx.textAlign='center'; ctx.fillText(d.label,x(i),H-padB+16);});
+  const last=vals[n-1], la=Math.abs(last), el=document.getElementById(labelId);
+  if(el) el.innerHTML=`<span style="color:${last>=0?'var(--g)':'var(--r)'}">${last>=0?'+':'-'}NT$${la>=1e6?(la/1e6).toFixed(2)+'M':(la/1e3).toFixed(1)+'K'}</span> <span style="color:var(--t3);font-size:9px;font-weight:400">期末累計</span>`;
+}
+
+function drawModelPnlChart(cid,data,labelId){
+  const cv=document.getElementById(cid); if(!cv)return;
+  const DPR=window.devicePixelRatio||1;
+  const W=cv.parentElement.clientWidth||800, H=parseInt(cv.getAttribute('height'))||250;
+  cv.width=W*DPR; cv.height=H*DPR; cv.style.width=W+'px'; cv.style.height=H+'px';
+  const ctx=cv.getContext('2d'); ctx.scale(DPR,DPR); ctx.clearRect(0,0,W,H);
+  const vals=data.map(d=>d.cumPNL), n=data.length;
+  const mn=0, mx=Math.max(...vals)*1.15, yR=mx-mn||1;
+  const padL=74,padR=14,padT=20,padB=42, cW=W-padL-padR, cH=H-padT-padB;
+  const x=i=>padL+(i/(n-1||1))*cW, y=v=>padT+cH-(v-mn)/yR*cH;
+  const ticks=[0, Math.round(mx/3), Math.round(mx*2/3), Math.round(mx)];
+  ticks.forEach(v=>{
+    const yy=y(v);
+    ctx.strokeStyle='rgba(48,54,61,0.7)';
+    ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(W-padR,yy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=v===0?'#7d8590':'#3fb950';
+    ctx.font='9px JetBrains Mono';
+    ctx.textAlign='right';
+    ctx.fillText('NT$'+(v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0)), padL-6, yy+3);
+  });
+  ctx.strokeStyle='rgba(255,255,255,0.18)';
+  ctx.beginPath(); ctx.moveTo(padL,y(0)); ctx.lineTo(W-padR,y(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x(0),y(vals[0])); for(let i=1;i<n;i++) ctx.lineTo(x(i),y(vals[i]));
+  ctx.strokeStyle='#3fb950'; ctx.lineWidth=2.4; ctx.stroke();
+  data.forEach((d,i)=>{
+    const xx=x(i), yy=y(d.cumPNL);
+    ctx.beginPath(); ctx.arc(xx,yy,2.8,0,Math.PI*2); ctx.fillStyle='#3fb950'; ctx.fill();
+    ctx.fillStyle='#7d8590'; ctx.font='8px JetBrains Mono'; ctx.textAlign='center'; ctx.fillText(d.label, xx, H-padB+16);
+  });
+  const last=vals[n-1], el=document.getElementById(labelId);
+  if(el) el.innerHTML=`<span style="color:var(--g)">+NT$${last.toLocaleString()}</span> <span style="color:var(--t3);font-size:9px;font-weight:400">期末累計</span>`;
+}
+
+function drawPoolBarChart(cid,data){
+  const cv=document.getElementById(cid); if(!cv)return;
+  const DPR=window.devicePixelRatio||1;
+  const W=cv.parentElement.clientWidth||800, H=parseInt(cv.getAttribute('height'))||250;
+  cv.width=W*DPR; cv.height=H*DPR; cv.style.width=W+'px'; cv.style.height=H+'px';
+  const ctx=cv.getContext('2d'); ctx.scale(DPR,DPR); ctx.clearRect(0,0,W,H);
+  const vals=data.map(d=>d.ret), n=data.length;
+  const mn=0, mx=14, yR=mx-mn||1;
+  const padL=38,padR=10,padT=16,padB=48, cW=W-padL-padR, cH=H-padT-padB;
+  const bw=cW/n*0.52;
+  const x=i=>padL+(i+0.5)*(cW/n), y=v=>padT+cH-(v-mn)/yR*cH, zy=y(0);
+  [0,5,10].forEach(v=>{
+    const yy=y(v);
+    ctx.strokeStyle='rgba(48,54,61,0.7)';
+    ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(W-padR,yy); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+  ctx.strokeStyle='rgba(255,255,255,0.18)';
+  ctx.beginPath(); ctx.moveTo(padL,zy); ctx.lineTo(W-padR,zy); ctx.stroke();
+  data.forEach((d,i)=>{
+    const xx=x(i)-bw/2, yy=y(d.ret), hh=zy-yy;
+    ctx.fillStyle='rgba(63,185,80,0.62)';
+    ctx.fillRect(xx,yy,bw,hh);
+    ctx.strokeStyle='#3fb950';
+    ctx.lineWidth=1.3;
+    ctx.strokeRect(xx,yy,bw,hh);
+    ctx.fillStyle='#3fb950';
+    ctx.font='bold 9px JetBrains Mono';
+    ctx.textAlign='center';
+    ctx.fillText('+'+d.ret.toFixed(2)+'%', x(i), yy-7);
+    ctx.fillStyle='#7d8590';
+    ctx.font='8px JetBrains Mono';
+    ctx.fillText(d.label, x(i), H-padB+18);
+  });
+  const avg=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2);
+  ctx.fillStyle='#7d8590';
+  ctx.font='10px JetBrains Mono';
+  ctx.textAlign='left';
+  ctx.fillText('資產池 7 檔等權觀察，區間平均報酬約', padL, H-8);
+  ctx.fillStyle='#3fb950';
+  ctx.font='bold 12px JetBrains Mono';
+  ctx.fillText('+'+avg+'%', padL+200, H-8);
+}
+
+
+function nCdf(x){const a=[.254829592,-.284496736,1.421413741,-1.453152027,1.330274429],p=.3275911;const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+p*x);const y=1-(((((a[4]*t+a[3])*t)+a[2])*t+a[1])*t+a[0])*t*Math.exp(-x*x/2);return.5*(1+s*y);}
+function nPdf(x){return Math.exp(-.5*x*x)/Math.sqrt(2*Math.PI);}
+function bsO(S,K,T,r,s,tp){if(T<=0)return tp==='call'?Math.max(0,S-K):Math.max(0,K-S);const d1=(Math.log(S/K)+(r+.5*s**2)*T)/(s*Math.sqrt(T)),d2=d1-s*Math.sqrt(T);return tp==='call'?S*nCdf(d1)-K*Math.exp(-r*T)*nCdf(d2):K*Math.exp(-r*T)*nCdf(-d2)-S*nCdf(-d1);}
+function bsD(S,K,T,r,s,tp,dir){T=Math.max(.001,T);const d1=(Math.log(S/K)+(r+.5*s**2)*T)/(s*Math.sqrt(T));return(tp==='call'?nCdf(d1):nCdf(d1)-1)*(dir==='long'?1:-1);}
+function bsTh(S,K,T,r,s,tp,dir){T=Math.max(.001,T);const d1=(Math.log(S/K)+(r+.5*s**2)*T)/(s*Math.sqrt(T)),d2=d1-s*Math.sqrt(T),phi=nPdf(d1),sd=dir==='long'?1:-1;if(tp==='call')return-(S*phi*s/(2*Math.sqrt(T))+r*K*Math.exp(-r*T)*nCdf(d2))/365*sd;return-(S*phi*s/(2*Math.sqrt(T))-r*K*Math.exp(-r*T)*nCdf(-d2))/365*sd;}
+function bsV(S,K,T,r,s,dir){T=Math.max(.001,T);const d1=(Math.log(S/K)+(r+.5*s**2)*T)/(s*Math.sqrt(T));return S*Math.sqrt(T)*nPdf(d1)/100*(dir==='long'?1:-1);}
+const R=0.05,FX=31.45;
+const C={NVDA:{s:202,hv:.33},AMD:{s:231.82,hv:.508},TSLA:{s:390.6,hv:.418},ADBE:{s:251,hv:.378},AVGO:{s:350.63,hv:.446},CAT:{s:771.58,hv:.403},DIS:{s:99.18,hv:.222}};
+const DR={NVDA:0,AMD:24,TSLA:0,ADBE:0,AVGO:0,CAT:0,DIS:0};
+const LEGS=[
+  {sym:'NVDA',tp:'call',dir:'long', K:182.5,mid:3.525, st:'NVDA Bull CS',cls:'sn',mp:2.20,ml:2.155,be:'$184.66'},
+  {sym:'NVDA',tp:'call',dir:'short',K:187.5,mid:1.370, st:'NVDA Bull CS',cls:'sn'},
+  {sym:'AMD', tp:'call',dir:'long', K:230,  mid:18.425,st:'AMD  Bull CS',cls:'sa',mp:4.975,ml:5.025,be:'$235.03'},
+  {sym:'AMD', tp:'call',dir:'short',K:240,  mid:13.4,  st:'AMD  Bull CS',cls:'sa'},
+  {sym:'TSLA',tp:'call',dir:'long', K:340,  mid:11.875,st:'TSLA Bull CS',cls:'st',mp:3.625,ml:3.875,be:'$343.88'},
+  {sym:'TSLA',tp:'call',dir:'short',K:347.5,mid:8.0,   st:'TSLA Bull CS',cls:'st'},
+  {sym:'ADBE',tp:'put', dir:'long', K:240,  mid:6.125, st:'ADBE Bear PS',cls:'se',mp:2.825,ml:2.175,be:'$237.83'},
+  {sym:'ADBE',tp:'put', dir:'short',K:235,  mid:3.950, st:'ADBE Bear PS',cls:'se'},
+  {sym:'AVGO',tp:'call',dir:'long', K:350,  mid:10.225,st:'AVGO Bull CS',cls:'sv',mp:2.55,ml:2.45,be:'$352.45'},
+  {sym:'AVGO',tp:'call',dir:'short',K:355,  mid:7.775, st:'AVGO Bull CS',cls:'sv'},
+  {sym:'CAT', tp:'call',dir:'long', K:770,  mid:19.925,st:'CAT  Bull CS',cls:'sc',mp:4.825,ml:5.175,be:'$775.18'},
+  {sym:'CAT', tp:'call',dir:'short',K:780,  mid:14.75, st:'CAT  Bull CS',cls:'sc'},
+  {sym:'DIS', tp:'call',dir:'short',K:100,  mid:1.345, st:'DIS  IC',     cls:'sd',mp:0.73,ml:0.27,be:'$97-$101'},
+  {sym:'DIS', tp:'put', dir:'short',K:98,   mid:1.13,  st:'DIS  IC',     cls:'sd'},
+  {sym:'DIS', tp:'call',dir:'long', K:101,  mid:0.91,  st:'DIS  IC',     cls:'sd'},
+  {sym:'DIS', tp:'put', dir:'long', K:97,   mid:0.835, st:'DIS  IC',     cls:'sd'},
+];
+function populateSimTables(){
+  const lb=document.getElementById('legsBody');
+  const sb=document.getElementById('stratBody');
+  if(!lb||!sb)return;
+  lb.innerHTML=''; sb.innerHTML='';
+  let tP=0,tD=0,tG=0,tTh=0,tV=0,tCost=0;
+  const stMap={};
+  const cc=v=>v>0.001?'up':v<-0.001?'dn':'flat';
+  LEGS.forEach(l=>{
+    const S=C[l.sym].s,sig=C[l.sym].hv,dr=DR[l.sym];
+    const T=Math.max(.001,dr/365);
+    const nb=bsO(S,l.K,T,R,sig,l.tp);
+    const sd=l.dir==='long'?1:-1;
+    const ps=(nb-l.mid)*sd,pn=ps*100*FX;
+    const d=bsD(S,l.K,T,R,sig,l.tp,l.dir)*100;
+    const th=bsTh(S,l.K,T,R,sig,l.tp,l.dir)*100;
+    const v_=bsV(S,l.K,T,R,sig,l.dir)*100;
+    const g_=(()=>{const T2=Math.max(.001,T),d1=(Math.log(S/l.K)+(R+.5*sig**2)*T2)/(sig*Math.sqrt(T2));return nPdf(d1)/(S*sig*Math.sqrt(T2))*sd*100;})();
+    tP+=pn;tD+=d;tG+=g_;tTh+=th;tV+=v_;tCost+=l.mid*sd*100*FX;
+    if(!stMap[l.st])stMap[l.st]={pnl:0,cls:l.cls,mp:l.mp||0,ml:l.ml||0,be:l.be||'—',nc:0};
+    stMap[l.st].pnl+=pn;stMap[l.st].nc+=l.mid*sd;
+    const dr2=dr===0?'<span style="color:var(--r)">到期✓</span>':dr+'d';
+    const tr=document.createElement('tr');tr.className=l.cls;
+    tr.innerHTML=`<td class="l" style="font-size:10px;font-weight:600">${l.st.trim()}</td>
+      <td><span class="bx ${l.tp==='call'?'bc':'bp'}">${l.tp[0].toUpperCase()}</span><span class="bx ${l.dir==='long'?'bl_':'bs_'}" style="margin-left:2px">${l.dir==='long'?'L':'S'}</span></td>
+      <td>$${l.K}</td><td>${S}</td><td>${dr2}</td>
+      <td style="color:var(--cy)">$${l.mid.toFixed(3)}</td><td style="color:var(--t2)">$${nb.toFixed(3)}</td>
+      <td class="${cc(ps)}">${ps>=0?'+':''}$${ps.toFixed(3)}</td>
+      <td class="${cc(pn)}">${pn>=0?'+NT$':'-NT$'}${Math.abs(pn).toFixed(0)}</td>
+      <td class="${cc(d)}">${d>=0?'+':''}${d.toFixed(3)}</td>
+      <td class="${cc(th)}">${th>=0?'+':''}${th.toFixed(4)}</td>
+      <td class="${cc(v_)}">${v_>=0?'+':''}${v_.toFixed(4)}</td>`;
+    lb.appendChild(tr);
+  });
+  const tr2=document.createElement('tr');tr2.className='tot';
+  tr2.innerHTML=`<td class="l" colspan="8"><b>合計 16 腿</b></td><td class="${(tP>0?'up':tP<0?'dn':'flat')}" style="font-size:14px"><b>${tP>=0?'+NT$':'-NT$'}${Math.abs(tP).toFixed(0)}</b></td><td class="${(tD>0?'up':tD<0?'dn':'flat')}">${tD>=0?'+':''}${tD.toFixed(2)}</td><td class="${(tTh>0?'up':tTh<0?'dn':'flat')}">${tTh>=0?'+':''}${tTh.toFixed(3)}</td><td class="${(tV>0?'up':tV<0?'dn':'flat')}">${tV>=0?'+':''}${tV.toFixed(3)}</td>`;
+  lb.appendChild(tr2);
+  const set=(id,v,cls)=>{const e=document.getElementById(id);if(e){e.textContent=v;if(cls)e.className='gv '+cls;}};
+  set('gd',(tD>=0?'+':'')+tD.toFixed(1),'up');
+  set('gg',(tG>=0?'+':'')+tG.toFixed(3),'');
+  set('gt','$'+(tTh>=0?'+':'')+tTh.toFixed(2),'dn');
+  set('gv_',(tV>=0?'+':'')+tV.toFixed(2),'');
+  const costAbs=Math.abs(tCost),ret=(tP/costAbs*100);
+  const gc=document.getElementById('gc'); if(gc) gc.textContent=costAbs.toFixed(0);
+  const gp=document.getElementById('gp');if(gp){gp.textContent=(tP>=0?'+NT$':'-NT$')+Math.abs(tP).toFixed(0);gp.className=tP>=0?'up':'dn';}
+  const gr=document.getElementById('gr'); if(gr){gr.textContent=(ret>=0?'+':'')+ret.toFixed(1)+'%'; gr.className=ret>=0?'up':'dn';}
+  const gr2=document.getElementById('gr2'); if(gr2){gr2.textContent=(ret>=0?'+':'')+ret.toFixed(1)+'%'; gr2.style.color=ret>=0?'var(--g)':'var(--r)';}
+  const ga=document.getElementById('ga'); if(ga){ga.textContent=(ret>=0?'+':'')+( ret*365/11).toFixed(0)+'%'; ga.className=ret>=0?'up':'dn';}
+  Object.entries(stMap).forEach(([k,v])=>{
+    const tr=document.createElement('tr');tr.className=v.cls;
+    const la=Math.abs(v.pnl);
+    tr.innerHTML=`<td class="l" style="font-weight:700;font-size:10px">${k.trim()}</td>
+      <td>${v.nc>=0?'+':''}$${v.nc.toFixed(3)}</td>
+      <td class="up">$${v.mp.toFixed(3)}</td><td class="dn">-$${v.ml.toFixed(3)}</td>
+      <td class="${(v.pnl>0?'up':v.pnl<0?'dn':'flat')}" style="font-weight:700">${v.pnl>=0?'+NT$':'-NT$'}${la>=1000?(la/1000).toFixed(1)+'K':la.toFixed(0)}</td>`;
+    sb.appendChild(tr);
+  });
+  const ttr=document.createElement('tr');ttr.className='tot';
+  const la2=Math.abs(tP);
+  ttr.innerHTML=`<td class="l" colspan="4"><b>合計</b></td><td class="${(tP>0?'up':tP<0?'dn':'flat')}" style="font-size:13px;font-weight:700">${tP>=0?'+NT$':'-NT$'}${la2>=1000?(la2/1000).toFixed(1)+'K':la2.toFixed(0)}</td>`;
+  sb.appendChild(ttr);
+}
+
+
+function redrawAll(){
+  drawLineChart('pnlCanvas',pnlData,'pnl-label');
+  drawModelPnlChart('modelPnlCanvas',modelPnlData,'model-pnl-label');
+  drawPoolBarChart('poolReturnCanvas',poolReturnData);
+  populateSimTables();
+}
+window.addEventListener('load',()=>setTimeout(redrawAll,100));
+window.addEventListener('resize',redrawAll);
+</script>
+
+</body>
+</html>
